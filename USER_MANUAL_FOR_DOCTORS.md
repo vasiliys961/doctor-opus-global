@@ -1,241 +1,353 @@
-# 📘 Краткая практическая инструкция с приложением
+# 📘 Doctor Opus — Physician User Guide
 
-Система способна самообучаться на основании вашей оценки ее заключений. Поэтому, если у вас будет время, то для того чтобы приложение становилось умнее, просьба оценивать его ответы в конце после проведенных тестов. Заранее благодарим!
+> **Important:** Doctor Opus is a Clinical Decision Support System (CDSS) for **licensed healthcare professionals only**. It is not FDA-approved and does not constitute a medical diagnosis. All AI-generated outputs require independent clinical verification. You bear full responsibility for all clinical decisions.
 
-Предназначена для врачей для облегчения работы и доступа к справочным материалам.  
-Внутри каждого раздела есть интуитивные подсказки. При первом использовании рекомендуем прочитать их, если необходимо.
+Doctor Opus accelerates your clinical workflow by providing AI-assisted interpretation of medical imaging, lab data, genetic reports, and clinical notes. Each section contains contextual tips — review them on first use.
 
-Приложение доступно на десктопе и смартфоне. Устройства могут работать автономно или в связке.
-
-## Связь устройств
-
-Для связи девайсов откройте раздел **«Изображение + Синхронизация»**.  
-В нем можно проанализировать почти все медицинские изображения. Там же расположен модуль сопряжения. Вы открываете приложение на своем устройстве, нажимаете на кнопку, а на другом устройстве вводите цифровой код. В итоге смартфон становится приставкой к десктопу, где работать удобнее.
-
-**Примечание:** на смартфон можно скачать приложение в виде иконки.
-
-### Как установить на смартфон (iPhone)
-
-1. Откройте сайт **doctor-opus.ru** в браузере **Safari**
-2. Нажмите кнопку **«Поделиться»** (квадрат со стрелкой вверх) внизу экрана
-3. Прокрутите вниз и выберите **«На экран "Домой"»**
-4. Нажмите **«Добавить»** в правом верхнем углу
-5. Готово! Иконка Doctor Opus появится на главном экране как обычное приложение
-
-### Как установить на смартфон (Android)
-
-1. Откройте сайт **doctor-opus.ru** в браузере **Chrome**
-2. Нажмите **три точки** (⋮) в правом верхнем углу
-3. Выберите **«Добавить на главный экран»** или **«Установить приложение»**
-4. Подтвердите установку
-5. Готово! Иконка Doctor Opus появится на главном экране
-
-После установки приложение работает как нативное: открывается в полноэкранном режиме, доступно через иконку, можно использовать даже при плохом интернете (кроме AI-функций).
+The application runs on desktop and mobile. Both can work independently or in tandem via the cross-device sync module.
 
 ---
 
-## Главная страница
+## 📱 Install as a Mobile App (PWA)
 
-Общая информация + быстрый переход в некоторые разделы.
+The platform is a Progressive Web App — install it on your home screen for native-like access.
 
-## Инструкции для врача
+### iPhone (Safari)
+1. Open **doctor-opus.online** in **Safari**
+2. Tap the **Share** button (square with arrow) at the bottom
+3. Scroll down and select **"Add to Home Screen"**
+4. Tap **"Add"** in the top-right corner
+5. Done — the Doctor Opus icon will appear on your home screen
 
-Краткие подсказки по ключевым сценариям.
+### Android (Chrome)
+1. Open **doctor-opus.online** in **Chrome**
+2. Tap the **three-dot menu** (⋮) in the top-right corner
+3. Select **"Add to Home Screen"** or **"Install App"**
+4. Confirm installation
+5. Done — the icon will appear on your home screen
 
-## ИИ-ассистент
-
-Это мозг системы.
-
-**Выпадающее меню предложит модель для общения:**
-
-- **Наиболее компетентные:** GPT-5 и Claude Opus. GPT-5 краток, Opus более обстоятельный, но дороже.
-- **Оптимально:** Claude Sonnet, Gemini — для быстрой справки.
-
-**Ассистент может:**
-
-- отвечать на любые вопросы и вести диалог;
-- принимать результаты, полученные в других разделах;
-- специализироваться при необходимости (невролог, кардиолог и т.д.);
-- проводить академический поиск, анализировать медицинскую литературу и использовать экспериментальные подходы;
-- работать с загруженными файлами (кроме PDF);
-- подключать библиотеку (если у вас есть электронные версии ваших документов, при включении этой кнопки ассистент будет использовать именно эту информацию).
+Once installed, the app opens full-screen, is accessible via icon, and works even with a poor connection (except AI features that require the network).
 
 ---
 
-## Персональная библиотека
+## 🏠 Home
 
-Потенциально можно загрузить до 1 ГБ информации, но это может замедлить браузер при слабом оборудовании.
-
----
-
-## Протокол осмотра
-
-Позволяет вносить несистематизированную информацию вразнобой (в окно диалога или голосом) и загрузить текст. После этого в правом окне вы получите систематизированный протокол осмотра с рекомендациями, который можно скачать в формате Word, подправить и распечатать.
-
-Чтобы протокол был именно ваш, есть выпадающее меню по специальностям, где учтены особенности каждого специалиста, но вы можете исправить шаблон под себя.
-
-Писать протокол могут несколько моделей. Оптимальные здесь: GPT-5 или Sonnet.
+Overview dashboard with quick navigation to all sections.
 
 ---
 
-## Медицинские калькуляторы
+## 🤖 AI Assistant
 
-При нажатии на кнопку вас перебросит на страницу другого приложения.
+The core intelligence of the platform. Supports open-ended clinical dialogue, case discussion, differential diagnosis, literature review, and multi-file analysis.
 
-**Примечание:** может не сразу запуститься, можно повторить запуск в браузере. Приложение также может установиться на смартфон.
+**Available models (dropdown):**
+- **GPT-5.2** — Best for 80% of imaging, MRI, and general clinical questions. Concise and efficient.
+- **Claude Opus 4.6** — Deepest reasoning. Best for complex cases, genetics, and rare pathologies. Slower, higher cost.
+- **Claude Sonnet 4.6** — Balanced. Excellent for quick consultations and fracture assessment.
+- **Gemini 3.1 Flash** — Fastest. Ideal for quick reference and data extraction.
 
----
+**The assistant can:**
+- Answer clinical questions and sustain multi-turn dialogue
+- Accept results exported from any other section
+- Specialize as a consultant (Cardiologist, Neurologist, Orthopedist, etc.)
+- Perform literature review and evidence-based searches
+- Process uploaded files (images, PDFs, Word documents)
+- Use your **Personal Library** (RAG) — when enabled, the assistant draws answers from your own uploaded PDF guidelines and references
 
-## Клинические рекомендации
-
-Наберите нозологию или проблему — и вам предоставят перечень международных и российских рекомендаций по теме с замечаниями:
-
-- **Стандарт** — краткие;
-- **Более глубокие**;
-- **Самые актуальные**.
-
----
-
-## Специализированный анализ
-
-### ЭКГ
-
-В подсказках раздела все расписано.  
-**Важно:** есть кнопки анонимизации изображения:
-
-- быстрая автоматическая;
-- ручная (обязательно вручную затереть персональные данные перед отправкой).
-
-В оптимизированном режиме можно выбрать GPT-5 или Sonnet.  
-Есть цифровой циркуль для измерения интервалов.
-
-Есть кнопка **«Найти в библиотеке»**: если в ваших книгах или гайдлайнах есть похожие случаи или описания патологий, они появятся в виде отдельных блоков (Выдержка #1, #2...) прямо под результатом анализа. Вы сможете сразу сравнить вывод ИИ с авторитетным источником.
-
-**Совет:** для лучшей работы функции загружайте современные клинические рекомендации и атласы ЭКГ в формате PDF с возможностью выделения текста (не сканы).
-
-### МРТ и КТ
-
-Читайте подсказки (большая часть аналогична ЭКГ).  
-**Дополнительно:**
-
-- можно загрузить как файл, так и папку файлов (DICOM);
-- **Продвинутый 3D-просмотр:** При загрузке DICOM-серии доступны две кнопки:
-  - **MPR 2x2:** Классическое отображение Axial, Coronal, Sagittal срезов и объемной модели в сетке.
-  - **Cinematic 3D ✨:** Полноэкранный режим с фотореалистичным рендерингом, мягкими тенями и специальными эффектами.
-- **Клинические пресеты:** «Кости» (скелет), «Просвет» (рентген-эффект для мягких тканей) и «Свечение ✨» (неоновая подсветка патологических очагов внутри органов).
-- **Интерактивы:** Скроллинг срезов колесиком мыши, зум и свободное вращение 3D-объекта.
-- анонимизация: ручная и автоматическая (для DICOM проводится автоматически).
-
-### 🔬 Продвинутая 3D Визуализация (Cinematic)
-
-Отдельный высокотехнологичный раздел для работы с объемными данными МРТ и КТ.
-- **Cinematic Mode:** Использует алгоритмы объемного рассеивания света для создания максимально реалистичного изображения органов.
-- **Vessel Highlight:** Специальный режим, в котором сосуды и контрастированные области окрашиваются в красный цвет, а окружающие ткани становятся полупрозрачными.
-- **Оптимизация M1:** Система автоматически оценивает мощность вашего компьютера и предлагает даунсэмплинг (сжатие) слишком тяжелых исследований для сохранения плавности вращения.
-- **Адаптивное качество:** При вращении модели качество временно снижается для высокой скорости отклика, а в покое восстанавливается до максимума (HQ).
-
-### УЗИ
-
-Можно загрузить снимок, видео-петлю и захватить автоматически или вручную кадры, после чего отправить их на обработку. Всегда после анонимизации.
-
-### Дерматоскопия
-
-По общим принципам.
-
-### 🔌 Прямое подключение оборудования (USB)
-
-Система поддерживает прямое считывание данных с медицинских приборов (ЭКГ-модули, датчики) через USB-порт без установки драйверов.
-- **Как подключить:** Перейдите в раздел **«Устройства»**, выберите скорость передачи (обычно 115200) и нажмите «Подключить».
-- **Браузер:** Функция работает в Google Chrome и Microsoft Edge на компьютерах.
-- **Живой поток:** Вы увидите кривую ЭКГ или данные датчика в реальном времени. Нажмите «Проанализировать фрагмент», чтобы ИИ мгновенно расшифровал текущий участок записи.
-
-### 🧪 Оценка лабораторных данных
-
-Раздел предназначен для оцифровки и глубокого анализа лабораторных бланков.
-- **Умное извлечение:** Система автоматически распознает показатели, их значения и референсы (даже из фото или многостраничных PDF).
-- **Анализ отклонений:** ИИ подсвечивает критические значения и интерпретирует их с учетом клинического контекста.
-- **Графики трендов:** Если вы ведете пациента в базе, система построит график изменения показателей во времени, чтобы вы могли наглядно оценить динамику лечения.
-
-### Клинический разбор видео
-
-Можно загрузить любой видеофайл (походка пациента, видео эндоскопии, ЭхоКГ, УЗИ и т.д.).
-
-Возможен анализ видео целиком или выборочных кадров — автоматически или вручную. Система извлекает большое количество снимков из каждого файла — как из одного, так и из всех файлов папки.
-
-Если анализируется видео целиком, убедитесь, что там нет персональных данных. В противном случае необходимо выбранные кадры анонимизировать.
-
-### Клинический разбор (изображение + контекст)
-
-Загружаете изображение и добавляете клинический контекст. В ответ получаете клиническую директиву.
-
-### Сравнительный анализ
-
-Проведение оценки изображений в динамике: по времени, с разных позиций.
-
-Можно сравнивать:
-
-- файлы видео;
-- папки видео (например, с разных точек одной проблемы у одного пациента) — как целиком (без персональных данных), так и извлеченные серии снимков из видео (с автоматической или ручной анонимизацией).
-
-**Примечание:** для многих разделов предусмотрено окно для клинического контекста (жалобы, анализы, результаты исследований и т.д.).  
-После этого проводится автоматическая анонимизация + дополнительная ручная врачом, чтобы предупредить утечку персональных данных.
+**PHI reminder:** Do not enter patient names, dates of birth, or other identifying information in the chat. Use anonymized descriptions (e.g., *"65 y.o. male, smoker, 3-week cough"*).
 
 ---
 
-## Сканирование документов
+## 📚 Personal Library (RAG)
 
-Превращает смартфон в ручной сканер. Сфотографировав документ, вы сможете его обработать.
+Upload your own PDF clinical guidelines, textbooks, and atlases. Once processed, the AI Assistant can search them and cite relevant excerpts directly in the analysis output.
 
-### 1. Локальный ксерокс (браузерный режим)
-
-Работает без участия нейросетей и интернета. Все происходит прямо в браузере врача, что гарантирует 100% приватность и не требует анонимизации.
-
-**Возможности:**
-
-- улучшение изображения: настройка яркости, контрастности и переключение в чёрно-белый режим;
-- мгновенный экспорт:
-  - Word (.docx): создается документ, в который вшивается скан с сохранением пропорций;
-  - PDF: открывает чистую версию документа для мгновенного сохранения в PDF или печати через системный диалог;
-- бесплатно: не тратятся токены и баланс.
-
-### 2. Умный OCR (ИИ-режим)
-
-Предназначен для извлечения текста и таблиц для дальнейшей работы.
-
-**Защита данных:**
-
-- обязательный и заметный тумблер анонимизации;
-- при включении персональные данные автоматически затираются сервером;
-- кнопка **«🎨 Закрасить данные вручную»** открывает визуальный редактор, где можно скрыть ФИО, адрес и любые чувствительные данные прямо на изображении.
-
-Теперь врач может за секунду превратить фото справки в качественный Word-файл локально либо отправить его на умный анализ, если нужно извлечь данные.
+- Capacity: up to ~1 GB (larger collections may slow the browser on low-end hardware)
+- Files are processed on your **local server** — not sent to external services
+- Use text-searchable PDFs (not scans) for best results
 
 ---
 
-## Генетический профиль
+## 📝 Clinical Protocol (Voice-to-Note)
 
-Можно загрузить файл генетического исследования в формате **.VCF** (сырой файл из лаборатории) или **PDF**, после чего отправить на обработку и извлечение информации, после анонимизации.
+Converts unstructured dictation or typed notes into a structured, specialty-specific clinical note — ready to download as a **Word (.docx)** file, edit, and sign.
+
+### How to use
+1. Select your **specialty** from the dropdown (Cardiology, Neurology, Orthopedics, etc.)
+2. Dictate or type the encounter notes in any order — the AI structures them automatically
+3. Click **Generate Protocol** — the formatted note appears in the right panel
+4. Download as `.docx`, review, and sign
+
+**Note structure follows SOAP / H&P format:**
+- **S** — Subjective (CC, HPI, PMH, medications, allergies)
+- **O** — Objective (vitals, PE findings)
+- **A** — Assessment (working diagnosis, differential)
+- **P** — Plan (diagnostics, treatment, follow-up)
+
+You can customize any template to match your workflow. The customized version can be pinned as your personal standard.
+
+**Recommended models:** GPT-5.2 or Claude Sonnet 4.6.
 
 ---
 
-## 🛡️ База данных и Приватность (152-ФЗ)
+## 🧮 Medical Calculators
 
-Приложение работает по принципу **Local-First** (Приоритет локального хранения).
-- **Где хранятся данные:** Все карточки пациентов, история анализов и заметки хранятся **только в памяти вашего браузера** (IndexedDB). Данные не улетают на сервер «просто так».
-- **Анонимизация:** Перед отправкой любого снимка на облачный анализ нейросетью, система требует анонимизации. ФИО и даты затираются автоматически или вручную в редакторе.
-- **Синхронизация:** Если вы используете связку «Телефон + Десктоп», данные передаются по защищенному временному каналу и удаляются сразу после завершения сессии.
+Launches an integrated third-party calculator suite. Runs client-side — no credits consumed, no data transmitted.
 
-### Соответствие стандартам (ГОСТ Р 72484-2025)
-«Doctor Opus функционирует как интеллектуальный цифровой ассистент (согласно ГОСТ Р 72484-2025), обеспечивая техническую интерпретацию и структурирование данных для повышения эффективности работы медицинского специалиста».
+---
 
-**Итог:** С юридической и технической точки зрения приложение сейчас максимально защищено и полностью вписывается в новую регуляторную рамку РФ 2026 года. Оно не является медицинским изделием, но является стандартизированным цифровым ассистентом.
+## 📋 Clinical Guidelines
 
-## 💰 Система юнитов (Баланс)
+Search current international clinical guidelines by condition, syndrome, or drug class.
 
-Для работы продвинутых моделей ИИ используются «Юниты». 1 юнит = 5 рублей.
-- **На что тратятся:**
-  - **Базовый анализ (Sonnet/Gemini):** ~0.5 – 1.0 ед.
-  - **Экспертный анализ (Opus/GPT-5):** ~1.5 – 3.0 ед.
-  - **PDF-документы:** Списание происходит за каждую страницу (т.к. каждая страница обрабатывается Vision-нейросетью).
-- **Экономия:** Простые текстовые вопросы или использование локального ксерокса в «Сканировании документов» — **бесплатно**.
-- **Прозрачность:** Точная стоимость каждого запроса отображается в блоке результата сразу после завершения анализа.
+**Search depth options:**
+- **Standard** — concise protocol summary with key recommendations
+- **Clinical Review** — deep analysis: differential, scoring scales (CHADS₂, Wells, CURB-65, etc.), step-by-step management, treatment algorithms
+- **Real-time Search** — latest 2024–2025 publications with source links
+
+After receiving results, you can continue the conversation with follow-up questions in context.
+
+---
+
+## 🔬 Specialized Analysis Modules
+
+### 📈 ECG Analysis
+
+**Workflow:**
+1. Upload an ECG image (JPG, PNG, or PDF scan)
+2. Add **clinical context** (CC, HPI, relevant medications) — significantly improves accuracy
+3. Use the **🛡️ anonymization buttons** before submitting:
+   - **Quick:** Auto-redacts edges and corners
+   - **Precision:** Brush editor for exact redaction
+4. Select analysis mode (Fast / Optimized / Expert Validated)
+
+**Additional tools:**
+- **Digital Caliper:** Drag blue markers to measure PR, QRS, QT intervals. Calibrate using the ECG grid (1 sec = 5 large cells at 25 mm/s)
+- **Search Library:** After analysis, click to find matching cases or descriptions in your personal PDF library
+
+**Recommended models:** GPT-5.2 (general) · Claude Sonnet 4.6 (arrhythmia detail)
+
+---
+
+### 🩻 X-Ray Analysis
+
+Upload single or multiple images (folder or DICOM series). Add clinical context for significantly better output.
+
+**Anonymization:**
+- Quick: auto-redacts standard PHI zones
+- Precision: manual brush editor
+- DICOM: metadata stripped automatically
+
+**Comparison mode:** Enable **Before/After** to compare two time points or views side-by-side.
+
+**Best models:** GPT-5.2 (80% of cases) · Claude Sonnet 4.6 (fractures, 83% accuracy)
+
+---
+
+### 🧠 CT Analysis
+
+Upload CT images or an entire DICOM folder.
+
+**3D Viewer (DICOM series):**
+- **MPR 2×2:** Axial / Coronal / Sagittal slices + volumetric model
+- **Cinematic 3D ✨:** Full-screen photorealistic rendering with soft shadows
+- **Clinical presets:** Bone, Soft tissue (X-ray effect), Glow (highlights pathological foci)
+- Scroll slices with mouse wheel · Zoom · Free 3D rotation
+- M1 chip: hardware-accelerated rendering
+
+PHI anonymization: manual and automatic (DICOM metadata auto-stripped).
+
+---
+
+### 🧠 MRI Analysis
+
+Identical workflow to CT. Supports multi-sequence DICOM series with full MPR and Cinematic 3D rendering.
+
+---
+
+### 🔊 Ultrasound Analysis (Cine-loop)
+
+Upload a static image **or** a video loop (cine-loop).
+
+**Frame extraction:**
+- **Auto-Extract:** System automatically extracts 5–12 key frames
+- **Manual Capture:** Step through with ±0.1s buttons and capture the exact frame
+
+All frames are anonymized before submission (black bars on edges).
+
+---
+
+### 🔬 Dermatoscopy Analysis
+
+Upload dermatoscopy images. Add clinical context (lesion location, duration, observed changes). Supports ABCDE criteria analysis and malignancy risk assessment.
+
+---
+
+### 🧪 Laboratory Data Analysis
+
+Upload a lab report (PDF, Excel, CSV, or photo of a paper form).
+
+**Smart extraction:** System automatically recognizes parameters, values, and reference ranges — even from multi-page PDFs or handwritten forms.
+
+**Analysis output includes:**
+- Critical value flagging
+- Clinical interpretation in the context of provided HPI
+- Trend graphs (if patient is in your database)
+
+---
+
+### 🧬 Genetic Analysis
+
+Upload a genetic report in **.VCF** format (raw lab output) or **PDF**.
+
+**Workflow:**
+1. Upload file
+2. **Stage 1 (Extract):** Gemini 3.1 Flash extracts rsIDs and genotypes from the report
+3. **Stage 2 (Interpret):** Claude Opus 4.6 provides clinical risk interpretation
+4. Continue dialogue with the Genetics specialist for follow-up questions
+
+Always anonymize before submitting (name and address auto-redacted on the preview screen).
+
+---
+
+### 🎬 Video Clinical Analysis
+
+Upload any video file (patient gait, endoscopy, echocardiography, ultrasound loop, etc.).
+
+**Two modes:**
+
+| Mode | Description | Use when |
+|---|---|---|
+| **Safe (frame extraction)** | System extracts 5–12 frames, anonymizes each, shows preview | Default — any video with or without PHI |
+| **Full video** | Entire file sent unprocessed | Only for already-anonymized files |
+
+> ⚠️ In Full Video mode, frames are NOT anonymized automatically. Confirm absence of PHI before using.
+
+---
+
+### 🔍 Comparative Analysis
+
+Side-by-side comparison of medical images across time or location.
+
+**Comparison modes:**
+- **Over Time** — progression assessment (before/after treatment)
+- **By Location** — comparing scans of different anatomical regions
+- **General** — free-form multi-image comparison
+
+Supports both single images and video/DICOM folder batches.
+
+---
+
+### 🔬 Advanced Analysis (Image + Context)
+
+Upload a primary image plus optional additional files (PDFs, Word documents, photos). Add detailed clinical context. Receive a unified clinical directive combining all inputs.
+
+---
+
+### 🧊 Advanced 3D Visualization (Cinematic)
+
+Dedicated high-fidelity volumetric rendering for MRI and CT DICOM series.
+
+- **Cinematic Mode:** Volume scattering for photorealistic organ rendering
+- **Vessel Highlight:** Vessels and contrast-enhanced areas shown in red; surrounding tissue becomes semi-transparent
+- **Adaptive quality:** Lower resolution while rotating for smooth performance; restores to HQ at rest
+- **Apple M1 optimization:** Automatic downsampling for heavy studies to maintain frame rate
+
+---
+
+## 📄 Document Scanning
+
+Turns your smartphone camera into a document scanner.
+
+### Local Copier (browser mode)
+Works entirely in your browser — no AI, no internet required. 100% private.
+
+**Features:**
+- Brightness, contrast, and grayscale adjustments
+- Export to **Word (.docx)** or **PDF** (via system print dialog)
+- Free — no credits consumed
+
+### Smart OCR (AI mode)
+Extracts text and tables from scanned documents for further processing.
+
+**PHI protection:**
+- Mandatory anonymization toggle
+- Auto-redaction of names and addresses when enabled
+- **🎨 Manual Redact** editor: paint over any sensitive area before submitting
+
+---
+
+## 👥 Patient Database
+
+Local patient records stored in your **browser's IndexedDB** — data never leaves your device.
+
+**Features:**
+- Add patients with name (anonymized alias recommended), age, gender, diagnosis, notes
+- Save analysis results to patient records from any analysis section
+- View analysis history, timeline, and lab value trend charts
+- AI case summary: one-click narrative summary of all saved analyses for a patient
+
+---
+
+## 🔌 Direct Device Connection (USB)
+
+Read data from ECG monitors, pulse oximeters, glucometers, and other serial-interface devices directly through the browser — no drivers required.
+
+1. Go to the **Devices** section
+2. Select baud rate (usually 115200)
+3. Click **Connect** and select your device from the browser prompt (Chrome / Edge only)
+4. View live ECG curve or sensor data
+5. Click **Analyze fragment** for immediate AI interpretation of the current segment
+
+---
+
+## 🛡️ Privacy & Data Handling
+
+Doctor Opus is built on a **Local-First** principle — patient data stays on your device.
+
+| Data type | Storage location | Leaves the device? |
+|---|---|---|
+| Patient cards & analysis history | Browser IndexedDB | Never |
+| Medical images during analysis | Browser RAM | Only anonymized fragments |
+| AI results (saved) | Browser IndexedDB | No |
+| User account & credit balance | Cloud PostgreSQL | Yes (no medical data) |
+| Analysis statistics (anonymized) | Cloud PostgreSQL | Yes (no PHI) |
+
+**Three-level anonymization before any AI call:**
+1. Browser-side text regex — names, dates, IDs stripped
+2. Image canvas redaction — PHI zones painted black
+3. Server-side recursive scrub — all request fields cleaned before OpenRouter
+
+No Personal Health Information (PHI) or Personally Identifiable Information (PII) linked to medical scans is stored in the cloud database.
+
+---
+
+## 💰 Credit System
+
+Credits are consumed when using advanced AI models. Simple reference lookups and local tools are free.
+
+| Operation | Credit cost (approx.) |
+|---|---|
+| Fast analysis (Gemini 3.1 Flash) | ~0.3 – 0.8 cr. |
+| Optimized analysis (Sonnet 4.6) | ~0.8 – 1.5 cr. |
+| Expert Validated (Opus 4.6 / GPT-5.2) | ~1.5 – 3.5 cr. |
+| PDF page (Vision processing) | ~0.3 cr. per page |
+| Local copier / calculators | Free |
+
+**Packages:**
+- **Starter:** 50 credits — $9.99
+- **Standard:** 150 credits — $24.99
+- **Pro:** 500 credits — $69.99
+
+Exact cost of each request is shown in the result block immediately after analysis completes. Full transaction history is available in **Balance & History**.
+
+---
+
+## 💡 Tips for Best Results
+
+- Always add **clinical context** (CC, HPI, key PMH) — it significantly improves relevance and accuracy
+- Use **text-searchable PDFs** (not image scans) for the Personal Library
+- For ECG: use **Claude Sonnet 4.6** in Optimized mode for arrhythmia detail
+- For fractures: **Claude Sonnet 4.6** outperforms other models (83% accuracy)
+- For complex genetics or rare pathology: use **Claude Opus 4.6** (Expert Validated mode)
+- The system improves over time through your feedback — please rate AI responses after tests

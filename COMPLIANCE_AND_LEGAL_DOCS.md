@@ -1,70 +1,138 @@
-# Юридическая и техническая документация Doctor Opus v3.42.0 (ГОСТ Р 72484-2025)
+# Doctor Opus — Compliance & Legal Overview
 
-Этот файл содержит официальные формулировки для контролирующих органов и техническое описание механизмов защиты данных.
-
----
-
-## 1. Заявка для платежных систем (Prodamus / Robokassa)
-
-**Предмет:** Подключение приема платежей для SaaS-платформы.
-**Сайт:** `[v-selivanov.ru или ваш домен]`
-**Юридическое лицо:** Самозанятый Селиванов В.Ф. (ИНН 920455053236)
-
-**Текст обоснования:**
-«Проект **Doctor Opus** — это узкоспециализированная информационно-аналитическая платформа для врачей (Decision Support System). Система предоставляет облачный доступ к мощностям нейросетевых моделей для автоматизации рутинных процессов: структурирования протоколов осмотра, технической интерпретации лабораторных данных и анализа медицинских изображений.
-
-Система работает по модели **SaaS**. Пользователи приобретают лицензионные пакеты «вычислительных единиц» (юнитов), которые расходуются пропорционально сложности выполняемых операций. 
-
-Проект полностью соответствует законодательству РФ:
-1.  **Локализация:** Серверы и базы данных размещены в РФ на мощностях провайдера **Timeweb**.
-2.  **Защита данных:** Реализована автоматическая анонимизация данных перед обработкой.
-3.  **Статус:** ПО не является медицинским изделием и не оказывает медицинских услуг, выступая интеллектуальным помощником врача.»
+**Domain:** doctor-opus.online  
+**Version:** 4.6.x (Global Edition)  
+**Last updated:** February 2026
 
 ---
 
-## 2. Сводка для банков и регуляторов (Росздравнадзор)
+## 1. Service Description (for Payment Processors & Compliance Teams)
 
-**Тип системы:** Информационно‑аналитическая платформа для врачей (SaaS‑сервис). По функционалу близка к СППВР/CDSS, но юридически не является зарегистрированным медицинским изделием.
+**Doctor Opus** is a specialized Software-as-a-Service (SaaS) platform providing licensed healthcare professionals with AI-assisted clinical decision support.
 
-### Анонимизация и безопасность (152-ФЗ)
-*   **Механизм Soft Anonymization:** В приложении реализован алгоритм на базе регулярных выражений (`lib/anonymization.ts`), который в реальном времени сканирует входящий текст и маскирует:
-    *   ФИО (русские и латинские).
-    *   Даты рождения и полные даты.
-    *   Номера документов (Паспорта, СНИЛС, ИНН, Полисы).
-    *   Контактные данные (Телефоны, Email, Адреса).
-*   **Локальная обработка:** Парсинг тяжелых файлов (DICOM, PDF) происходит в браузере пользователя. На сервер и во внешние ИИ-модели уходят только обезличенные текстовые токены или фрагменты изображений без метаданных пациента.
-*   **Stateless-архитектура:** Исходные медицинские файлы не хранятся в постоянной базе данных. Они существуют только в оперативной памяти в момент анализа.
+**What we provide:**
+- Cloud-based access to AI language and vision models for structuring clinical notes, interpreting medical images, and analyzing laboratory and genetic data
+- A credit-based subscription model — users purchase packages of computational units (credits) consumed proportionally to the complexity of each operation
+- Physician-only access — registration requires professional credentials acknowledgment
 
-### Юридический статус
-*   Программа предоставляет «второе мнение» и формирует **вспомогательный черновик описания**.
-*   В интерфейсе и системных инструкциях ИИ (`lib/prompts.ts`) жестко зафиксировано: ИИ запрещено ставить окончательные диагнозы. 
-*   Любой результат работы системы требует обязательной проверки и подписи врача. Ответственность за клиническое решение остается за специалистом.
+**What we do NOT provide:**
+- Medical diagnoses, prescriptions, or treatment orders
+- Services to patients (B2C) — physicians only (B2B)
+- FDA-cleared or CE-marked medical device functionality
 
-### Соответствие стандартам ИИ в здравоохранении
-«Doctor Opus функционирует как интеллектуальный цифровой ассистент (согласно ГОСТ Р 72484-2025), обеспечивая техническую интерпретацию и структурирование данных для повышения эффективности работы медицинского специалиста».
+**Legal classification:** IT SaaS platform / Clinical Decision Support System (CDSS). Not a registered medical device in any jurisdiction.
 
-**Итог:** С юридической и технической точки зрения приложение сейчас максимально защищено и полностью вписывается в новую регуляторную рамку РФ 2026 года. Оно не является медицинским изделием, но является стандартизированным цифровым ассистентом.
+**Contact:** support@doctor-opus.online
 
 ---
 
-## 3. Техническая реализация (Для памяти разработчика)
+## 2. Regulatory Status & Licensing
 
-### Как устроены механизмы защиты и контроля:
+Doctor Opus operates as an **informational and analytical software service** (CDSS), not a medical device.
 
-1.  **Анонимизация (`lib/anonymization.ts`):**
-    *   Используется каскад `Regex` для вырезания PHI (Protected Health Information).
-    *   Внедрен список `MEDICAL_EXCEPTIONS` (КТ, МРТ, УЗИ и т.д.), чтобы фильтр не удалял важные медицинские аббревиатуры, принимая их за инициалы.
-    *   Функция `anonymizeObject` рекурсивно очищает все данные перед отправкой в OpenRouter API.
+**Key statements:**
+- The system does not autonomously diagnose, prescribe, or perform clinical procedures
+- All AI outputs are advisory and require mandatory physician review and sign-off
+- The system explicitly prohibits AI from making final diagnoses (enforced in `lib/prompts.ts`)
+- Users acknowledge sole clinical responsibility at registration (mandatory checkbox)
 
-2.  **Аудит по отделениям (`lib/subscription-manager.ts`):**
-    *   В объект `Transaction` добавлено обязательное поле `specialty`.
-    *   При каждом списании баланса (через `deductBalance`) система автоматически подхватывает контекст страницы (например, если врач в разделе ЭКГ — записывается 'cardiology').
-    *   Агрегация данных происходит на лету в компоненте `/app/clinic/dashboard/page.tsx` без нагрузки на основную БД.
+**Not required:**
+- FDA 510(k) clearance or PMA (not a medical device under 21 CFR Part 880)
+- CE marking under EU MDR 2017/745 (informational tool, not a medical device)
+- National medical device registration in any jurisdiction
 
-3.  **Инфраструктурный слой (`lib/database.ts`):**
-    *   Подключение к БД реализовано через стандартный драйвер **pg** (node-postgres). Строка подключения задаётся переменной окружения `POSTGRES_URL` или `DATABASE_URL`, что позволяет разворачивать приложение на любом хостинге с PostgreSQL, в том числе **Timeweb**.
-    *   Все таблицы (согласия, балансы, фидбек) спроектированы под требования Робокассы и 152-ФЗ.
+---
 
-4.  **Универсальный конструктор (`lib/prompts.ts`):**
-    *   Внедрена база из 22 медицинских профилей с жестко заданными структурами JSON и Markdown.
-    *   Это гарантирует, что ИИ не «галлюцинирует» структуру документа, а заполняет заранее подготовленные медицинские бланки (зубные формулы, суставной статус и т.д.).
+## 3. Data Protection & Privacy (GDPR / HIPAA Considerations)
+
+### User Data (Physicians)
+Data collected at registration and stored in cloud PostgreSQL:
+- Email address
+- Display name (optional)
+- Hashed password (bcrypt)
+- Credit balance and transaction history
+- Anonymous usage statistics (model, credit cost, timestamp)
+
+No clinical or patient data is linked to user accounts in the cloud database.
+
+### Patient Data
+Doctor Opus operates on a **Local-First** architecture:
+- All patient records (name, age, diagnosis, notes, analysis history) are stored exclusively in the **physician's browser** (IndexedDB)
+- Patient data is **never transmitted to our servers**
+- We have no access to, and do not store, any patient identifiable information
+
+### Medical Images & PHI
+The platform implements a **Three-Level Anonymization System** before any data reaches OpenRouter APIs:
+
+| Level | Mechanism | Scope |
+|---|---|---|
+| 1 — Text regex | `lib/anonymization.ts` | Names, dates, IDs, phones, addresses stripped in real time |
+| 2 — Image canvas | Browser-side brush editor | PHI zones painted black before encoding |
+| 3 — Server scrub | `anonymizeObject()` recursive function | All request fields cleaned server-side before API call |
+
+**Result:** No Personal Health Information (PHI) or Personally Identifiable Information (PII) linked to medical scans is stored on our servers or transmitted to third-party AI providers in identifiable form.
+
+### Cross-Border Data Transfer
+By using Doctor Opus, users consent to anonymized data being processed by OpenRouter (US-based) and AssemblyAI (US-based) for AI inference. No raw medical images, patient names, or identifiable patient data are transmitted — only anonymized image fragments and de-identified text.
+
+---
+
+## 4. Technical Mechanisms (Developer Reference)
+
+### Anonymization (`lib/anonymization.ts`)
+- Cascaded regex filters for PHI detection (Protected Health Information)
+- `MEDICAL_EXCEPTIONS` list prevents false positives on medical abbreviations (ECG, MRI, CT, etc.)
+- `anonymizeObject()` function recursively cleans all data objects before API submission
+
+### Billing Audit (`lib/subscription-manager.ts`)
+- Every balance deduction records: `specialty`, `model_used`, `tokens_in`, `tokens_out`, `cost`, `timestamp`
+- Clinic dashboard aggregates spending by department without loading production DB
+- All transactions use PostgreSQL `SELECT ... FOR UPDATE` to prevent race conditions
+
+### Infrastructure (`lib/database.ts`)
+- PostgreSQL connection via standard `pg` (node-postgres) driver
+- Connection string via `POSTGRES_URL` or `DATABASE_URL` environment variable
+- All tables designed with compliance auditing in mind — timestamps on all writes
+
+### Prompt Safety (`lib/prompts.ts`)
+- System prompt hardcodes prohibition on final diagnoses
+- AI explicitly instructed to append verification requirement to all outputs
+- 22 specialty templates enforce structured SOAP/H&P output format
+
+---
+
+## 5. Monetization Model
+
+**Type:** SaaS subscription — credit packages
+
+| Package | Credits | Price (USD) |
+|---|---|---|
+| Starter | 50 | $9.99 |
+| Standard | 150 | $24.99 |
+| Pro | 500 | $69.99 |
+
+**Payment gateway:** NOWPayments (crypto + fiat, international)
+
+**Important:** Payment is for an IT service (computational access), not a medical consultation or service.
+
+---
+
+## 6. Compliance Contact
+
+For payment processor compliance reviews, data protection inquiries, or legal correspondence:
+
+**Email:** support@doctor-opus.online  
+**Website:** https://doctor-opus.online  
+**Legal documents:** https://doctor-opus.online/docs/privacy
+
+---
+
+## 7. Key Legal Documents (in-app)
+
+| Document | URL |
+|---|---|
+| Privacy Policy (GDPR/HIPAA) | /docs/privacy |
+| Terms of Service | /docs/terms |
+| Refund Policy | /docs/refund |
+| Informed Consent | /docs/consent |
+| SaaS Subscription Agreement | /docs/offer |

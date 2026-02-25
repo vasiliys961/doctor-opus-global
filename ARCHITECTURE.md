@@ -1,498 +1,298 @@
-# 🏗️ Архитектура проекта Medical Assistant
+# 🏗️ Doctor Opus — System Architecture
 
-## 📁 Структура проекта
-
-```
-medical-assistant3/
-├── app.py                          # Главное приложение Streamlit (рефакторинг v3.x)
-├── app_simple.py                   # Упрощенная версия приложения
-├── claude_assistant.py             # Основной модуль для работы с OpenRouter API
-├── config.py                       # Конфигурация (загружает ключи из secrets.toml)
-├── config.example.py               # Пример конфигурации
-├── database.py                     # Работа с базой данных
-├── run_app.py                      # Скрипт запуска с проверками
-│
-├── .streamlit/
-│   └── secrets.toml                # ⚠️ Секретные ключи (НЕ коммитится!)
-│
-├── config/                         # Конфигурация
-│   └── constants.py                # Константы приложения
-│
-├── modules/                        # Модули приложения
-│   ├── claude_assistant.py        # Альтернативная версия помощника
-│   ├── medical_ai_analyzer.py     # Анализатор медицинских изображений
-│   ├── enhanced_medical_ai_analyzer.py
-│   ├── streamlit_enhanced_pages.py # Расширенные страницы Streamlit
-│   ├── advanced_ecg_processor.py   # Обработка ЭКГ
-│   ├── advanced_lab_processor.py   # Обработка лабораторных данных
-│   ├── dicom_processor.py         # Обработка DICOM файлов
-│   └── genetic_analyzer.py         # Генетический анализ
-│
-├── page_modules/                   # Модули страниц (ленивая загрузка)
-│   ├── home_page.py               # Главная страница
-│   ├── ecg_page.py                # Анализ ЭКГ
-│   ├── xray_page.py               # Анализ рентгена
-│   ├── mri_page.py                # Анализ МРТ
-│   ├── ct_page.py                 # Анализ КТ
-│   └── ...                        # Другие страницы
-│
-├── utils/                          # Утилиты (рефакторинг v3.x)
-│   ├── cache_manager.py           # Управление кэшем
-│   ├── error_handler.py           # Обработка ошибок (декораторы, контекстные менеджеры)
-│   ├── export_manager.py          # Экспорт данных
-│   ├── image_processor.py         # Обработка изображений
-│   ├── performance_monitor.py     # Мониторинг производительности
-│   ├── module_registry.py         # Централизованное управление импортами (v3.1)
-│   ├── lazy_page_loader.py        # Ленивая загрузка модулей страниц (v3.11)
-│   ├── ui_styles.py               # CSS стили приложения (v3.2)
-│   ├── clinical_recommendations.py # Клинические рекомендации (v3.2)
-│   ├── feedback_auto_check.py     # Автоматическая проверка feedback (v3.3)
-│   ├── analysis_helpers.py        # Вспомогательные функции анализа (v3.2)
-│   ├── component_initializer.py   # Безопасная инициализация компонентов (v3.9)
-│   └── ...
-│
-├── services/                       # Сервисы
-│   ├── consensus_engine.py        # Консенсус между моделями
-│   ├── model_router.py            # Маршрутизация моделей
-│   └── validation_pipeline.py     # Валидация данных
-│
-├── prompts/                       # Промпты для ИИ (модульная структура)
-│   ├── common_parts.py           # Общие части промптов (устранение повторений)
-│   ├── diagnostic_prompts.py     # Диагностические промпты для изображений
-│   ├── video_prompts.py          # Промпты для анализа видео
-│   └── prompt_registry.py        # Реестр промптов
-│
-├── tests/                         # Тесты (v3.10-v3.12)
-│   ├── test_module_registry.py   # Тесты для ModuleRegistry
-│   ├── test_ui_styles.py         # Тесты для CSS стилей
-│   ├── test_analysis_helpers.py  # Тесты для вспомогательных функций
-│   ├── test_component_initializer.py # Тесты для инициализации
-│   ├── test_lazy_page_loader.py  # Тесты для ленивой загрузки
-│   ├── test_error_handler.py    # Тесты для обработки ошибок
-│   └── test_clinical_recommendations.py # Тесты для рекомендаций
-│
-├── data/                          # Данные (НЕ коммитится)
-│   └── medical_data.db
-│
-├── cache/                         # Кэш (НЕ коммитится)
-├── logs/                          # Логи (НЕ коммитится)
-├── uploads/                       # Загруженные файлы (НЕ коммитится)
-├── exports/                       # Экспортированные данные (НЕ коммитится)
-└── temp/                          # Временные файлы (НЕ коммитится)
-```
-
-## 🏛️ Архитектурные компоненты
-
-### 1. Главное приложение (`app.py`)
-
-**После рефакторинга v3.x:**
-- Размер уменьшен с ~530 до ~261 строки (-51%)
-- Все импорты через `ModuleRegistry` (v3.1)
-- Ленивая загрузка модулей страниц (v3.11)
-- Вынесены функции в отдельные модули
-- 100% покрытие docstrings и type hints
-
-**Основные функции:**
-- `main()` - точка входа приложения
-- `transcribe_audio()` - транскрибация аудио (заглушка)
-
-### 2. Управление модулями (`utils/module_registry.py`)
-
-**Назначение:** Централизованное управление безопасными импортами
-
-**Ключевые классы:**
-- `ModuleRegistry` - реестр модулей
-- `setup_default_registry()` - настройка реестра по умолчанию
-- `get_registry()` - получение singleton экземпляра
-
-**Пример использования:**
-```python
-from utils.module_registry import setup_default_registry
-registry = setup_default_registry()
-registry.import_all()
-registry.export_to_globals(globals())
-```
-
-### 3. Ленивая загрузка страниц (`utils/lazy_page_loader.py`)
-
-**Назначение:** Оптимизация производительности - модули загружаются только при обращении
-
-**Ключевые классы:**
-- `LazyPageLoader` - загрузчик страниц
-- `get_lazy_loader()` - получение singleton экземпляра
-
-**Преимущества:**
-- Ускорение запуска на ~30-50%
-- Экономия памяти
-- Кэширование загруженных модулей
-
-**Пример использования:**
-```python
-from utils.lazy_page_loader import get_lazy_loader
-loader = get_lazy_loader()
-page_function = loader.get_page_function("📈 Анализ ЭКГ")
-if page_function:
-    page_function()
-```
-
-### 4. Обработка ошибок (`utils/error_handler.py`)
-
-**Назначение:** Централизованная обработка ошибок с улучшенными сообщениями
-
-**Ключевые функции:**
-- `handle_error()` - базовая обработка ошибок
-- `handle_error_enhanced()` - расширенная обработка с деталями
-- `error_handler()` - декоратор для автоматической обработки
-- `error_context()` - контекстный менеджер
-- `get_error_hint()` - получение контекстных подсказок
-- `format_error_message()` - форматирование сообщений
-
-**Примеры использования:**
-
-Декоратор:
-```python
-@error_handler(context="Обработка изображения", default_return=None)
-def process_image(image_path):
-    return result
-```
-
-Контекстный менеджер:
-```python
-with error_context("Загрузка файла"):
-    file_content = load_file(path)
-```
-
-### 5. Вспомогательные модули
-
-#### `utils/ui_styles.py`
-- CSS стили приложения
-- Функция `get_app_styles()` возвращает стили
-
-#### `utils/clinical_recommendations.py`
-- Клинические рекомендации для диагнозов
-- Функция `show_clinical_recommendations(diagnosis)`
-
-#### `utils/analysis_helpers.py`
-- Вспомогательные функции для анализа
-- `perform_analysis_with_streaming()` - анализ с streaming
-- `get_model_metrics_display()` - метрики моделей
-
-#### `utils/component_initializer.py`
-- Безопасная инициализация компонентов
-- Функция `safe_init_components(assistant)`
-
-## 🔐 Система управления ключами
-
-### Унифицированная загрузка для Streamlit и Replit
-
-Приложение автоматически определяет платформу и загружает конфигурацию с правильным приоритетом.
-
-### Приоритет загрузки ключей:
-
-1. **Переменные окружения** (высший приоритет - особенно важно для Replit)
-   ```bash
-   export OPENROUTER_API_KEY="sk-or-v1-..."
-   export ASSEMBLYAI_API_KEY="..."  # Опциональный
-   ```
-
-2. **`st.secrets`** (Streamlit UI secrets) - если доступно
-   ```python
-   # Автоматически загружается из Streamlit UI
-   ```
-
-3. **`.streamlit/secrets.toml`** (локально для Streamlit)
-   ```toml
-   [api_keys]
-   OPENROUTER_API_KEY = "sk-or-v1-..."
-   ASSEMBLYAI_API_KEY = "..."  # Опциональный
-   ```
-
-### Важные изменения:
-
-- **ASSEMBLYAI_API_KEY** - теперь **опциональный** (не ломает приложение при отсутствии)
-- **OPENROUTER_API_KEY** - обязательный для работы ИИ-функций
-- Автоматическое логирование источника загруженных ключей
-
-### ⚠️ Безопасность:
-
-- ✅ `.streamlit/secrets.toml` в `.gitignore` - не коммитится
-- ✅ `config.py` в `.gitignore` - не коммитится
-- ✅ Все переменные окружения игнорируются
-- ❌ **НИКОГДА** не храните ключи в коде!
-- ❌ **НИКОГДА** не коммитьте файлы с ключами!
-
-### Использование ключей в коде:
-
-```python
-# ✅ ПРАВИЛЬНО: Импорт из config
-from config import OPENROUTER_API_KEY
-
-# ✅ ПРАВИЛЬНО: Получение из Streamlit secrets
-api_key = st.secrets.get("api_keys", {}).get("OPENROUTER_API_KEY")
-
-# ❌ НЕПРАВИЛЬНО: Захардкоженный ключ
-api_key = "sk-or-v1-..."  # НИКОГДА так не делайте!
-```
-
-## 🔄 Поток данных
-
-```
-Пользователь → Streamlit UI (app.py)
-    ↓
-Загрузка изображения/данных
-    ↓
-Обработка (modules/*.py, utils/*.py)
-    ↓
-ИИ-анализ (claude_assistant.py → OpenRouter API)
-    ↓
-Результат → База данных (database.py)
-    ↓
-Отображение пользователю
-```
-
-## 📦 Основные модули
-
-### `app.py`
-- Главное приложение Streamlit
-- Страницы: ЭКГ, Рентген, МРТ, КТ, УЗИ, Лабораторные данные
-- Интеграция всех модулей
-- **После рефакторинга:** Упрощенная структура, ленивая загрузка, оптимизация
-
-### `claude_assistant.py`
-- Работа с OpenRouter API
-- Поддержка множества моделей (Claude, Llama, Gemini, Qwen)
-- Кэширование результатов
-- Обработка ошибок
-
-### `config.py`
-- Централизованная конфигурация с унификацией для Streamlit и Replit
-- Унифицированная загрузка секретов из разных источников
-- Класс `EnvironmentConfig` для централизованного управления настройками
-- Автоматическое определение платформы (Streamlit/Replit/Local)
-- Адаптивные настройки путей и производительности
-- Валидация конфигурации
-- Логирование процесса загрузки
-
-**Класс EnvironmentConfig:**
-- Автоматическое определение платформы
-- Адаптивные пути для разных окружений
-- Настройки производительности (размер загрузок, таймауты)
-- Методы валидации и сводки конфигурации
-- Безопасная обработка ошибок с fallback значениями
-
-### `modules/medical_ai_analyzer.py`
-- Анализ медицинских изображений
-- Поддержка различных типов изображений
-- Структурированный вывод результатов
-
-### `prompts/` - Модульная система промптов
-
-**Модульная структура для устранения повторений:**
-
-- **`common_parts.py`** - Общие части промптов:
-  - Общие инструкции по формату ответа
-  - Структура клинического заключения
-  - Требования к локализации патологий
-  - Шаблоны описания образований
-
-- **`diagnostic_prompts.py`** - Диагностические промпты:
-  - **ЭКГ** - электрокардиограмма
-  - **Рентген** - рентгеновские снимки
-  - **МРТ** - магнитно-резонансная томография
-  - **КТ** - компьютерная томография
-  - **УЗИ** - ультразвуковое исследование
-  - **Дерматоскопия** - анализ кожи
-  - **Генетика** - генетический анализ (SNP, нутригеномика, фармакогенетика, лонгевити)
-  - **Гистология** - гистологический анализ
-  - **Сетчатка** - анализ сетчатки глаза
-  - **Маммография** - маммографический анализ (BI-RADS)
-
-- **`video_prompts.py`** - Специализированные промпты для анализа видео:
-  - ЭКГ (динамика)
-  - МРТ/КТ (последовательности)
-  - УЗИ (в реальном времени)
-
-Все промпты используют общие части из `common_parts.py` для единообразия и устранения повторений.
-
-## 🗄️ База данных
-
-- **Файл:** `data/medical_data.db`
-- **Тип:** SQLite
-- **Таблицы:** patients, analyses, results
-- **НЕ коммитится** в git (в `.gitignore`)
-
-## 📝 Логирование
-
-- **Директория:** `logs/`
-- **Формат:** `medical_assistant_YYYYMMDD.log`
-- **НЕ коммитится** в git
-- **Детальное логирование:** Типы ошибок, трассировка, контекст
-
-## 🧪 Тестирование
-
-- **Директория:** `tests/`
-- **Всего тестов:** 89 тестов
-- **Покрытие:** ~90% новых модулей, ~80%+ всех модулей
-- **Все тесты проходят:** ✅
-
-**Тестовые файлы:**
-- `test_module_registry.py` - тесты для ModuleRegistry
-- `test_ui_styles.py` - тесты для CSS стилей
-- `test_analysis_helpers.py` - тесты для вспомогательных функций
-- `test_component_initializer.py` - тесты для инициализации
-- `test_lazy_page_loader.py` - тесты для ленивой загрузки
-- `test_error_handler.py` - тесты для обработки ошибок
-- `test_clinical_recommendations.py` - тесты для рекомендаций
-
-## 🚀 Запуск приложения
-
-```bash
-# Простой запуск
-streamlit run app.py
-
-# С проверками и настройкой
-python run_app.py
-```
-
-## 🔧 Настройка
-
-### Для локального запуска (Streamlit):
-
-1. Создайте `.streamlit/secrets.toml` с вашими ключами:
-   ```toml
-   [api_keys]
-   OPENROUTER_API_KEY = "sk-or-v1-..."
-   ASSEMBLYAI_API_KEY = "..."  # Опциональный
-   ```
-
-2. Установите зависимости: `pip install -r requirements.txt`
-   - Некоторые библиотеки закомментированы (не используются) - можно не устанавливать
-
-3. Запустите: `streamlit run app.py`
-
-### Для Replit:
-
-1. Установите ключи через **Secrets** (переменные окружения):
-   - `OPENROUTER_API_KEY` - обязательный
-   - `ASSEMBLYAI_API_KEY` - опциональный
-
-2. Приложение автоматически определит платформу и загрузит конфигурацию
-3. Зависимости установятся автоматически через `.replit`
-
-### Унификация конфигурации:
-
-Приложение автоматически определяет платформу и адаптирует настройки:
-- **Replit**: Ограниченные ресурсы (25 MB загрузки, меньшие таймауты)
-- **Streamlit локально**: Стандартные настройки (50 MB загрузки)
-- **Локально**: Максимальные ресурсы (100 MB загрузки)
-
-Все настройки централизованы в классе `EnvironmentConfig` из `config.py`.
-
-## 📋 Требования и зависимости
-
-### Основные зависимости
-
-Приложение использует минимальный набор библиотек для работы. Некоторые библиотеки в `requirements.txt` закомментированы, так как не используются в текущей версии приложения.
-
-**Основные библиотеки:**
-- `streamlit` - веб-интерфейс
-- `requests`, `httpx` - HTTP запросы к API
-- `numpy`, `pandas` - обработка данных
-- `Pillow`, `opencv-python` - обработка изображений
-- `pydicom` - обработка DICOM файлов
-- `plotly`, `matplotlib` - визуализация
-
-**Опциональные:**
-- Некоторые библиотеки закомментированы в `requirements.txt` и не требуются для работы
-
-## 🔄 Выполненные улучшения
-
-### Рефакторинг v3.x (2025-01-30)
-
-#### v3.1: ModuleRegistry
-- Централизованное управление безопасными импортами
-- Упрощено 26 блоков `safe_import_module` в `app.py`
-- Уменьшение кода на ~42%
-
-#### v3.2-v3.3: Вынос функций и CSS
-- Вынесены функции анализа в `utils/analysis_helpers.py`
-- CSS стили вынесены в `utils/ui_styles.py`
-- Клинические рекомендации в `utils/clinical_recommendations.py`
-- Автоанализ feedback в `utils/feedback_auto_check.py`
-
-#### v3.5-v3.7: Очистка и организация
-- Удалены неиспользуемые импорты
-- Магические числа заменены на константы
-- Импорты сгруппированы по PEP 8
-
-#### v3.8: Документация
-- Все функции документированы и типизированы
-- 100% покрытие docstrings и type hints
-
-#### v3.9: Устранение дублирования
-- Устранено дублирование в `component_initializer.py`
-- Вынесена общая функция `_safe_init_component()`
-
-#### v3.10-v3.12: Тестирование
-- Создано 6 тестовых файлов
-- 89 тестов, все проходят успешно
-- Покрытие новых модулей ~90%
-
-#### v3.11: Оптимизация производительности
-- Создан `LazyPageLoader` для ленивой загрузки модулей
-- Ускорение запуска на ~30-50%
-- Экономия памяти
-
-#### v3.13: Улучшение обработки ошибок
-- Расширен `error_handler.py` - добавлено 6 новых функций
-- Декораторы и контекстные менеджеры для обработки ошибок
-- Улучшенные сообщения с контекстными подсказками
-
-### Этап 1: Очистка requirements.txt
-- Закомментировано 28 неиспользуемых библиотек
-- Удалены дубликаты
-- Приложение работает с оптимизированным списком зависимостей
-
-### Этап 2: Улучшение config.py
-- Унифицированная загрузка конфигурации для Streamlit и Replit
-- Класс `EnvironmentConfig` для централизованного управления
-- ASSEMBLYAI_API_KEY сделан опциональным
-- Улучшенное логирование и валидация
-- Адаптивные настройки для разных платформ
-
-### Модульная структура промптов
-- Создан `common_parts.py` для общих элементов промптов
-- Устранена повторяемость между промптами
-- Добавлены новые диагностические промпты (генетика, гистология, сетчатка, маммография)
-
-## 📊 Метрики рефакторинга
-
-### Размер кода:
-- **Начальный размер `app.py`:** ~530 строк (после v3.1)
-- **Текущий размер `app.py`:** ~261 строка (с документацией)
-- **Улучшение:** -51% кода (без документации)
-
-### Качество кода:
-- **Документация:** 100% функций имеют docstrings и type hints
-- **Дублирование:** Устранено в `component_initializer.py`
-- **Тесты:** 89 тестов, все проходят
-- **Покрытие:** ~90% новых модулей, ~80%+ всех модулей
-
-### Производительность:
-- **Ускорение запуска:** ~30-50% (ленивая загрузка)
-- **Экономия памяти:** Модули загружаются по требованию
-
-### Созданные модули:
-- 6 новых файлов в `utils/`
-- 6 тестовых файлов в `tests/`
-
-## 📚 Дополнительная документация
-
-- `README.md` - Основная документация
-- `NEXT_STEPS_REFACTORING.md` - Следующие шаги рефакторинга
-- `REFACTORING_V3_*.md` - Отчеты о рефакторинге
-- `tests/` - Тестовые файлы с примерами использования
+**Stack:** Next.js 14 App Router · TypeScript · PostgreSQL · OpenRouter · AssemblyAI · NOWPayments
 
 ---
-**Версия:** 3.0 (после рефакторинга v3.x)  
-**Последнее обновление:** 2025-01-30
+
+## 📁 Project Structure
+
+```text
+doctor-opus/
+├── app/                          # Next.js 14 App Router
+│   ├── layout.tsx                # Root layout (metadata, fonts, PWA)
+│   ├── page.tsx                  # Landing page
+│   ├── auth/signin/page.tsx      # Authentication & registration
+│   ├── chat/page.tsx             # AI Assistant (main chat interface)
+│   ├── ecg/page.tsx              # ECG analysis
+│   ├── xray/page.tsx             # X-Ray analysis
+│   ├── ct/page.tsx               # CT analysis
+│   ├── mri/page.tsx              # MRI analysis
+│   ├── ultrasound/page.tsx       # Ultrasound / cine-loop analysis
+│   ├── dermatoscopy/page.tsx     # Dermatoscopy analysis
+│   ├── image-analysis/page.tsx   # Universal imaging (multi-modal)
+│   ├── lab/page.tsx              # Laboratory data analysis
+│   ├── genetic/page.tsx          # Genetic report analysis (VCF / PDF)
+│   ├── video/page.tsx            # Video clinical analysis
+│   ├── comparative/page.tsx      # Comparative before/after analysis
+│   ├── advanced/page.tsx         # Advanced analysis (image + context)
+│   ├── advanced-3d/page.tsx      # Cinematic 3D volumetric rendering
+│   ├── protocol/page.tsx         # Voice-to-protocol (dictation)
+│   ├── protocols/page.tsx        # Clinical guidelines search
+│   ├── document/page.tsx         # Document scanning (OCR + local copier)
+│   ├── patients/page.tsx         # Patient database (IndexedDB)
+│   ├── library/page.tsx          # Personal PDF library (RAG)
+│   ├── balance/page.tsx          # Credit balance & transaction history
+│   ├── subscription/page.tsx     # Credit package purchase
+│   ├── statistics/page.tsx       # Usage statistics & model performance
+│   ├── calculators/page.tsx      # Medical calculators
+│   ├── devices/page.tsx          # USB device direct connection
+│   ├── clinic/dashboard/         # Clinic audit dashboard
+│   ├── admin/payments/           # Admin payment management
+│   ├── compliance/page.tsx       # Compliance information
+│   ├── docs/                     # Legal documents
+│   │   ├── privacy/page.tsx      # Privacy Policy (GDPR/HIPAA)
+│   │   ├── terms/page.tsx        # Terms of Service
+│   │   ├── refund/page.tsx       # Refund Policy
+│   │   ├── consent/page.tsx      # Informed Consent
+│   │   └── offer/page.tsx        # SaaS Subscription Agreement
+│   └── api/                      # API Route Handlers
+│       ├── auth/[...nextauth]/   # NextAuth endpoints
+│       ├── analyze/              # AI analysis endpoints
+│       │   ├── image/            # Image analysis (streaming SSE)
+│       │   ├── ecg/              # ECG streaming analysis
+│       │   ├── labs/             # Lab data OCR + analysis
+│       │   ├── genetic/          # Genetic report extraction
+│       │   ├── scan/             # Document OCR
+│       │   └── patient-summary/  # AI patient case summary
+│       ├── payment/
+│       │   ├── create/route.ts   # Create NOWPayments invoice
+│       │   └── webhook/route.ts  # IPN webhook (HMAC verified)
+│       ├── protocols/search/     # Clinical guidelines search
+│       ├── feedback/             # Analysis feedback collection
+│       ├── balance/              # Balance read / deduct
+│       ├── library/              # RAG library management
+│       └── sync/                 # Cross-device sync (temporary token)
+│
+├── components/                   # Reusable React components
+│   ├── Navigation.tsx            # Top navigation bar
+│   ├── LegalFooter.tsx           # Footer with legal links + disclaimer
+│   ├── MedicalDisclaimer.tsx     # Mandatory AI disclaimer (compact + full)
+│   ├── AnalysisResult.tsx        # AI result display + export actions
+│   ├── AnalysisTips.tsx          # Contextual usage tips per modality
+│   ├── AnalysisModeSelector.tsx  # Fast / Optimized / Expert mode picker
+│   ├── ModalitySelector.tsx      # Imaging modality selector
+│   ├── ImageUpload.tsx           # File upload + DICOM + anonymization
+│   ├── FileUpload.tsx            # Multi-file upload component
+│   ├── ImageEditor.tsx           # Canvas-based brush redaction editor
+│   ├── AudioUpload.tsx           # Audio upload + microphone recording
+│   ├── VoiceInput.tsx            # Inline voice input button
+│   ├── PatientSelector.tsx       # Patient context selector (IndexedDB)
+│   ├── FeedbackForm.tsx          # Post-analysis accuracy feedback
+│   ├── SpendingSummary.tsx       # Monthly credit usage summary
+│   ├── LabTrendChart.tsx         # Lab value trend chart (SVG)
+│   ├── LibrarySearch.tsx         # RAG library search result display
+│   ├── EcgCaliper.tsx            # Digital ECG caliper / ruler
+│   ├── DeviceSync.tsx            # Cross-device photo sync (QR/code)
+│   ├── CookieBanner.tsx          # Cookie consent banner
+│   └── ErrorBoundary.tsx         # React error boundary wrapper
+│
+├── lib/                          # Core business logic
+│   ├── prompts.ts                # All AI system prompts + specialist templates
+│   ├── chat-specialists.ts       # Chat specialist definitions (22 profiles)
+│   ├── subscription-manager.ts   # Credit packages, balance, transactions
+│   ├── anonymization.ts          # PHI regex anonymization engine
+│   ├── database.ts               # PostgreSQL connection + queries (pg)
+│   ├── auth.ts                   # NextAuth configuration
+│   ├── openrouter.ts             # OpenRouter SDK wrapper + model routing
+│   ├── streaming.ts              # SSE streaming utilities
+│   ├── docx-generator.ts         # Word document generation (docx lib)
+│   └── payment/
+│       ├── types.ts              # Payment provider types
+│       ├── payment-service.ts    # Payment provider registry
+│       └── providers/
+│           └── nowpayments.ts    # NOWPayments API integration
+│
+├── public/                       # Static assets
+│   ├── manifest.json             # PWA manifest
+│   └── icons/                    # App icons (PWA)
+│
+└── types/                        # Global TypeScript definitions
+```
+
+---
+
+## 🔄 Core Workflows
+
+### 1. AI Image Analysis (Two-Stage Pipeline)
+
+```
+User uploads image
+       │
+       ▼
+[Browser] ImageUpload.tsx
+  ├─ DICOM parsing (Cornerstone.js)
+  ├─ PHI redaction (canvas brush / auto)
+  └─ Base64 encoding
+       │
+       ▼
+[API] /api/analyze/image  (Next.js Route Handler)
+  ├─ Stage 1: Gemini 3.1 Flash → structured JSON description
+  └─ Stage 2: Selected model (Sonnet / Opus / GPT-5.2) → clinical directive
+       │
+       ▼ SSE stream
+[Browser] AnalysisResult.tsx
+  ├─ Real-time token rendering
+  ├─ Export: .docx / clipboard / print / share
+  └─ Save to patient record (IndexedDB)
+```
+
+### 2. Voice-to-Protocol
+
+```
+Physician dictates / types unsorted notes
+       │
+       ▼
+[API] AssemblyAI transcription  (audio files)
+       │
+       ▼
+[API] /api/analyze/protocol
+  └─ Selected specialty template (SOAP / H&P) + GPT-5.2 or Sonnet
+       │
+       ▼
+Structured clinical note (.docx export)
+```
+
+### 3. Credit Billing Flow
+
+```
+User selects package → /api/payment/create
+       │
+       ▼
+NOWPayments invoice created (crypto / fiat)
+       │
+       ▼ Payment confirmed
+NOWPayments IPN webhook → /api/payment/webhook
+  ├─ HMAC signature verification
+  ├─ getPaymentByOrderId (PostgreSQL)
+  ├─ updatePaymentStatus
+  └─ addCredits to user balance
+```
+
+### 4. PHI Anonymization Chain
+
+```
+Input text / image
+       │
+       ▼
+Level 1: Browser-side regex (lib/anonymization.ts)
+  └─ Names, dates, IDs, phones, addresses → [REDACTED]
+       │
+       ▼
+Level 2: Image canvas redaction
+  └─ Black bars on edges + manual brush (ImageEditor)
+       │
+       ▼
+Level 3: Server-side strip before OpenRouter
+  └─ anonymizeObject() — recursive PHI scrub on all request fields
+```
+
+---
+
+## 🗄️ Database Schema (PostgreSQL)
+
+```sql
+-- Users & Authentication (managed by NextAuth)
+users (id, email, name, password_hash, created_at)
+
+-- Credit System
+user_balance (user_id, credits, package_name, package_price_usd,
+              purchase_date, created_at)
+
+transactions (id, user_id, type, amount, description, specialty,
+              model_used, tokens_in, tokens_out, created_at)
+
+-- Payments
+payments (id, user_id, order_id, package_id, amount_usd, status,
+          provider, created_at, updated_at)
+
+-- Feedback & Fine-tuning data
+feedback (id, user_id, analysis_type, specialty, correctness,
+          correct_diagnosis, comment, consent_given, created_at)
+```
+
+---
+
+## 🤖 AI Model Routing
+
+| Use Case | Recommended Model | Reason |
+|---|---|---|
+| General X-Ray / MRI | GPT-5.2 | Best visual accuracy (80% of cases) |
+| Fractures / Bone pathology | Claude Sonnet 4.6 | 83% accuracy on skeletal studies |
+| Complex cases / Genetics | Claude Opus 4.6 | Deep clinical reasoning |
+| OCR / Data extraction | Gemini 3.1 Flash | Speed + cost efficiency |
+| Clinical guidelines search | Claude Opus 4.6 | Synthesis + evidence depth |
+| Voice protocol generation | GPT-5.2 or Sonnet | Structured output quality |
+
+---
+
+## 🛡️ Security Architecture
+
+### Authentication
+- **NextAuth v4** with JWT strategy
+- All API routes protected by session middleware
+- Passwords hashed with bcrypt
+
+### API Protection
+- Rate limiting at Nginx level
+- PostgreSQL `SELECT ... FOR UPDATE` on all balance deductions (no race conditions)
+- HMAC verification on all payment webhooks
+
+### Data Isolation
+- **Patient data:** IndexedDB (browser-local only) — never leaves the device
+- **Medical images:** Processed in browser memory, anonymized before API call
+- **AI results:** Ephemeral — stored only on user request in IndexedDB
+- **Cloud DB:** Only stores user accounts, credit balances, transactions, and feedback
+
+---
+
+## 🐳 Deployment
+
+```
+Internet
+   │
+   ▼
+Nginx (SSL termination, reverse proxy)
+   │
+   ▼
+Next.js App (Docker container, port 3000)
+   │
+   ├─► PostgreSQL (Neon cloud or self-hosted)
+   ├─► OpenRouter API (AI models)
+   ├─► AssemblyAI API (voice transcription)
+   └─► NOWPayments API (billing)
+```
+
+### Docker Compose Services
+- `medical-assistant` — Next.js application
+- `nginx` — Reverse proxy with SSL
+
+### Key Environment Variables
+```env
+OPENROUTER_API_KEY
+POSTGRES_URL
+NEXTAUTH_SECRET
+NEXTAUTH_URL=https://doctor-opus.online
+ASSEMBLYAI_API_KEY
+NOWPAYMENTS_API_KEY
+NOWPAYMENTS_IPN_SECRET
+MIGRATION_SECRET
+ENCRYPTION_SALT
+```
+
+---
+
+## 📦 Key Dependencies
+
+| Package | Purpose |
+|---|---|
+| `next` 14 | Framework |
+| `next-auth` | Authentication |
+| `pg` | PostgreSQL client |
+| `openai` | OpenRouter API client |
+| `docx` + `file-saver` | Word document generation |
+| `cornerstone-core` | DICOM viewer |
+| `pdfjs-dist` | PDF parsing (browser) |
+| `mammoth` | Word document parsing |
+| `idb` | IndexedDB wrapper |
+| `bcryptjs` | Password hashing |
+| `tailwindcss` | Styling |

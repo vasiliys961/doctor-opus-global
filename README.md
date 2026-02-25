@@ -1,123 +1,134 @@
-## 🏥 Doctor Opus (Optima Edition)
+# 🏥 Doctor Opus — AI Clinical Decision Support Platform
 
-**Версия:** 4.5.x | **Дата:** 14 февраля 2026 | **Статус:** 🚀 Prompt/Protocol + Stability Update
+**Version:** 4.6.x | **Updated:** February 2026 | **Status:** 🌍 Global Edition
 
-Комплексное веб-приложение для врачей и экспертных клиник, построенное на **Next.js 14**. Помогает анализировать медицинские данные с помощью агентских AI-цепочек (через OpenRouter). Поддерживает DICOM, лабораторные анализы, генетические отчёты, голосовые протоколы и клиническую анонимизацию данных.
+> **Disclaimer:** Doctor Opus is a Clinical Decision Support System (CDSS) intended exclusively for use by licensed healthcare professionals. It is **not FDA-approved**, does not constitute a medical diagnosis, and does not replace clinical judgment. All AI-generated outputs require physician verification and sign-off. The clinician bears full responsibility for any clinical decisions made.
 
-> **Внимание:** это вспомогательный инструмент для врачей. Все выводы носят рекомендательный характер и требуют клинического подтверждения.
-
----
-
-## 🚀 Ключевые особенности
-
-### 🛡️ Трёхуровневая анонимизация (ФЗ-152 Compliant)
-- **Серверная автоматическая защита:** 100% анонимизация всех изображений перед отправкой в OpenRouter (работает всегда).
-- **Быстрая анонимизация:** Одна кнопка для автоматического закрашивания краёв и углов снимков.
-- **Точная ручная анонимизация:** Редактор с кистью для прицельного закрашивания любых областей.
-- **Текстовая анонимизация:** Автоматическое обнаружение и замена ФИО, паспортов, СНИЛС, телефонов.
-- **Уровень защиты:** 99.9% | **Документация:** [`docs/ANONYMIZATION_GUIDE.md`](docs/ANONYMIZATION_GUIDE.md)
-
-### 🤖 Продвинутый AI-анализ
-- **Мультимодельный Консилиум:** 
-  - **Claude Opus 4.6:** Глубокая логика для сложных клинических случаев и генетики.
-  - **Claude Sonnet 4.6:** Специалист по переломам и костным патологиям (83% точности).
-  - **GPT-5.2 Chat:** ЛУЧШИЙ выбор для 80% рентгена, МРТ и общего клинического анализа.
-  - **Gemini 3.1 Flash:** Скоростное извлечение данных (OCR) и скрининг.
-- **Двухэтапный Workflow:** Извлечение структурированных данных (JSON) → Формирование клинической директивы.
-
-### 📸 Анализ изображений и DICOM
-- **Native DICOM:** Просмотр и анализ снимков прямо в браузере.
-- **Поддержка:** ЭКГ, Рентген, МРТ, КТ, УЗИ, Дерматоскопия, Гистология.
-- **Генетика:** Анализ VCF-файлов и сложных PDF-отчетов.
-
-### 🎙️ Голосовые протоколы
-- **Voice-to-Protocol:** Заполнение медицинских протоколов голосом (AssemblyAI).
-- **Экспорт:** Генерация профессиональных заключений в формате **Word (.docx)**.
-
-### 💰 Биллинг и Баланс
-- **Интеграция платежных систем:** Покупка пакетов единиц для доступа к анализам.
-- **Система Баланса:** Списание по стоимости сервиса (модели + инфраструктура: серверная обработка, хранение, доставка).
+A comprehensive web application for physicians and expert clinics, built on **Next.js 14 App Router**. It accelerates clinical workflows through agentic AI chains (via OpenRouter), supporting DICOM imaging, laboratory data, genetic reports, voice-dictated protocols, and three-level PHI anonymization.
 
 ---
 
-## 🛠️ Технологический стек
-- **Frontend/Backend:** Next.js 14 (App Router), TypeScript.
-- **Database:** PostgreSQL (Neon) для хранения балансов, согласий и статистики.
-- **AI Integration:** OpenRouter SDK, Streaming API (SSE).
-- **Auth:** Next-Auth (JWT Strategy).
-- **Deployment:** Timeweb VPS, Docker Compose, Nginx.
+## 🚀 Key Features
+
+### 🛡️ Three-Level Anonymization System (GDPR / HIPAA-Aligned)
+- **Automatic server-side protection:** 100% anonymization of all images before transmission to OpenRouter — always active.
+- **Quick anonymize:** One-click automatic redaction of image edges and corners.
+- **Precision manual redact:** Brush editor for targeted redaction of any region.
+- **Text anonymization:** Automatic detection and removal of names, dates, IDs, phone numbers, addresses.
+- **Protection level:** 99.9% | No PHI or PII linked to medical scans is stored.
+
+### 🤖 Advanced AI Analysis
+- **Multi-model Council:**
+  - **Claude Opus 4.6:** Deep reasoning for complex clinical cases and genomics.
+  - **Claude Sonnet 4.6:** Best-in-class for fractures and skeletal pathology (83% accuracy).
+  - **GPT-5.2:** Best choice for 80% of X-Ray, MRI, and general clinical analysis.
+  - **Gemini 3.1 Flash:** High-speed data extraction (OCR) and screening.
+- **Two-stage Workflow:** Structured data extraction (JSON) → Clinical directive generation.
+- **Streaming (SSE):** Real-time token-by-token output for immediate feedback.
+
+### 📸 Medical Imaging & DICOM
+- **Native DICOM:** In-browser viewing and analysis of DICOM series (Cornerstone.js).
+- **Modalities:** ECG, X-Ray, MRI, CT, Ultrasound (cine-loop), Dermatoscopy, Histology, Ophthalmology, Mammography.
+- **3D Volumetric Rendering:** MPR 2×2 (Axial / Coronal / Sagittal) + Cinematic 3D mode (Apple M1 accelerated).
+- **Genetics:** VCF file analysis and complex multi-page PDF genetic report parsing.
+
+### 🎙️ Voice-to-Protocol
+- **Dictation:** Fill clinical encounter notes by voice (AssemblyAI).
+- **Export:** Generate professional reports in **Word (.docx)** format, ready to print and sign.
+- **Templates:** 22 specialty-specific templates (Cardiology, Neurology, Orthopedics, etc.) following SOAP / H&P structure.
+
+### 💰 Credit-Based Billing
+- **Payment:** NOWPayments gateway (crypto + fiat, USD).
+- **Packages:** Starter (50 cr. / $9.99), Standard (150 cr. / $24.99), Pro (500 cr. / $69.99).
+- **Transparent pricing:** Exact credit cost displayed after every analysis.
 
 ---
 
-## 📋 Быстрый старт
+## 🛠️ Tech Stack
 
-### Требования
-- **Node.js 20.x** или выше (обязательно).
-- API-ключ **OpenRouter**.
-- База данных **PostgreSQL** (Neon).
+| Layer | Technology |
+|---|---|
+| Frontend / Backend | Next.js 14 (App Router), TypeScript |
+| Database | PostgreSQL (Neon) — balances, consents, statistics |
+| AI Integration | OpenRouter SDK, Streaming API (SSE) |
+| Auth | NextAuth v4 (JWT Strategy) |
+| Payments | NOWPayments (crypto/fiat) |
+| Voice | AssemblyAI |
+| Deployment | VPS + Docker Compose + Nginx |
 
-### 1. Установка
+---
+
+## 📋 Quick Start
+
+### Requirements
+- **Node.js 20.x** or higher
+- **OpenRouter** API key
+- **PostgreSQL** database (Neon or self-hosted)
+
+### 1. Install
 ```bash
-git clone https://github.com/vasiliys961/doctor-opus.git
-cd doctor-opus
+git clone https://github.com/your-org/doctor-opus-global.git
+cd doctor-opus-global
 npm install
 ```
 
-### 2. Настройка (.env)
-```env
-OPENROUTER_API_KEY=ваш_ключ
-POSTGRES_URL=ссылка_на_базу
-NEXTAUTH_SECRET=случайная_строка
-NEXTAUTH_URL=https://doctor-opus.ru
-ASSEMBLYAI_API_KEY=ваш_ключ
-MIGRATION_SECRET=случайная_строка_32_символа
-ENCRYPTION_SALT=случайная_строка_32_символа
-```
-
-Рекомендуется взять полный шаблон из `.env.example` и заполнить его:
+### 2. Configure environment
 ```bash
 cp .env.example .env
 ```
 
-### 3. Запуск
+```env
+OPENROUTER_API_KEY=your_key
+POSTGRES_URL=your_postgres_connection_string
+NEXTAUTH_SECRET=random_32_char_string
+NEXTAUTH_URL=https://doctor-opus.online
+ASSEMBLYAI_API_KEY=your_key
+MIGRATION_SECRET=random_32_char_string
+ENCRYPTION_SALT=random_32_char_string
+NOWPAYMENTS_API_KEY=your_key
+NOWPAYMENTS_IPN_SECRET=your_ipn_secret
+```
+
+### 3. Run development server
 ```bash
 npm run dev
 ```
-Откройте [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 🔐 Безопасность
+## 🔐 Security
 
-### Критические улучшения:
-✅ **Защита API:** Middleware с NextAuth JWT — все endpoints требуют авторизацию  
-✅ **Серверный биллинг:** PostgreSQL транзакции с `FOR UPDATE` — защита от race conditions  
-✅ **Безопасные логи:** Автоматическая маскировка API ключей, токенов и email  
-✅ **Расширенная анонимизация:** ИНН, СНИЛС, паспорта, телефоны, адреса удаляются из PHI данных  
+### Built-in Protections
+- **API security:** NextAuth JWT middleware — all endpoints require authentication
+- **Server-side billing:** PostgreSQL transactions with `FOR UPDATE` — race condition safe
+- **Safe logs:** Automatic masking of API keys, tokens, and email addresses
+- **PHI anonymization:** Names, dates, IDs, phones, addresses stripped from all data before AI submission
 
-### Privacy by Design:
-- Персональные данные фильтруются на уровне API-роутов
-- Баланс пользователей хранится в защищенной PostgreSQL (не в localStorage)
-- API-ключи никогда не передаются на клиент и маскируются в логах
-- Полная анонимизация перед отправкой в AI-модели
+### Privacy by Design
+- Patient cards and analysis history stored **locally in the browser** (IndexedDB) — not on server
+- PHI filtered at the API route level before reaching any external service
+- User balances stored in PostgreSQL; no sensitive medical data touches the cloud database
+- API keys never exposed to the client and masked in all logs
+- Full anonymization before sending any data to AI models
 
 ---
 
-## 🐳 Деплой на Timeweb (Docker Compose)
+## 🐳 Deployment (Docker Compose)
 
-### Предусловия
-- Docker + Docker Compose plugin установлены на VPS.
-- DNS домена указывает на сервер.
-- Сертификаты лежат в `nginx/ssl/` (`fullchain.crt`, `privkey.key`).
+### Prerequisites
+- Docker + Docker Compose installed on VPS
+- DNS pointing to your server
+- SSL certificates in `nginx/ssl/` (`fullchain.crt`, `privkey.key`)
 
-### Обязательные переменные окружения
+### Required environment variables
 - `OPENROUTER_API_KEY`
 - `NEXTAUTH_SECRET`
 - `NEXTAUTH_URL`
 - `MIGRATION_SECRET`
 - `ENCRYPTION_SALT`
 
-### Быстрый запуск
+### Launch
 ```bash
 docker compose pull
 docker compose build --no-cache medical-assistant
@@ -125,47 +136,40 @@ docker compose up -d
 docker compose ps
 ```
 
-### Проверка после старта
+### Verify
 ```bash
 docker compose logs -f medical-assistant
-curl -I https://doctor-opus.ru
+curl -I https://doctor-opus.online
 ```
-
-### Важно
-- В `docker-compose.yml` переменные без значений будут пустыми, если не задать их в `.env`.
-- Для SMTP Timeweb заполните `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
-- Для платежей (PayAnyWay) заполните `PAYMENT_PROVIDER=payanyway`, `PAYANYWAY_MNT_ID`, `PAYANYWAY_SECRET`, `PAYANYWAY_TEST_MODE`.
 
 ---
 
-## 📁 Структура (Optima Core)
+## 📁 Project Structure
+
 ```text
 doctor-opus/
-├── app/              # Маршруты Next.js (Pages & API)
-├── components/       # UI-компоненты (React)
-├── lib/              # Ядро: база данных, логика биллинга, AI-стриминг
-├── public/           # Статические ресурсы
-├── types/            # TypeScript определения
-└── docs/history/     # Архив отчетов и документации
+├── app/              # Next.js routes (Pages & API Route Handlers)
+├── components/       # React UI components
+├── lib/              # Core: database, billing logic, AI streaming, prompts
+├── public/           # Static assets
+├── types/            # TypeScript type definitions
+└── docs/             # Architecture and compliance documentation
 ```
 
 ---
 
-## 📚 Документация
+## 📚 Documentation
 
-### Безопасность и анонимизация
-- **[Руководство по анонимизации](docs/ANONYMIZATION_GUIDE.md)** — полное описание трёхуровневой системы защиты ПД
-- **[Обновления безопасности v3.40.0](SECURITY_UPDATES_v3.40.0.md)** — краткая справка по последним изменениям
-
-### Техническая документация
-- **[Архитектура проекта](ARCHITECTURE.md)** — структура и взаимодействие компонентов
-- **[Руководство по миграции](docs/MIGRATION_GUIDE.md)** — обновление базы данных
-- **[Система балансов](docs/subscription/BALANCE_SYSTEM.md)** — биллинг и списание единиц
-
-### Для врачей
-- **[Руководство пользователя](USER_MANUAL_FOR_DOCTORS.md)** — инструкции для врачей
+| Document | Description |
+|---|---|
+| [Architecture](ARCHITECTURE.md) | System architecture and component interactions |
+| [User Manual](USER_MANUAL_FOR_DOCTORS.md) | Physician guide to all features |
+| [Compliance](COMPLIANCE_AND_LEGAL_DOCS.md) | GDPR/HIPAA data handling overview |
 
 ---
 
-## ⚖️ Лицензия
-Разработчик не несет ответственности за клинические решения, принятые на основе рекомендаций системы.
+## ⚖️ Legal
+
+Doctor Opus is a **Clinical Decision Support System (CDSS)**, not a medical device. It is not FDA-approved, CE-marked, or registered as a medical device in any jurisdiction. All outputs are informational and require independent clinical verification by a licensed practitioner. The developer assumes no liability for clinical decisions made using this tool.
+
+**For licensed healthcare professionals only.**
