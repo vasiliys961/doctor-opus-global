@@ -40,9 +40,12 @@ function getConsiliumDebateModel(): string {
 }
 
 const CONSILIUM_DEBATE_MODEL = getConsiliumDebateModel();
-// Fugu Ultra — автоматический технический фоллбек (не выбор пользователя): если основная
-// модель дебатов недоступна (сбой провайдера, временные ограничения и т.п.), см. llm-client.ts.
-const CONSILIUM_DEBATE_FALLBACK_MODEL = MODELS.FUGU_ULTRA;
+// A verified responsive Sonnet fallback is the default for the candidate v2.
+ // Fugu Ultra may remain selectable by env var, but its reliability should be
+ // measured on clinical workloads before using it as the sole rescue path.
+ // The frozen NOHARM baseline in Actions run 41237938481 is unchanged.
+const CONSILIUM_DEBATE_FALLBACK_MODEL =
+  (process.env.CONSILIUM_DEBATE_FALLBACK_MODEL || '').trim() || MODELS.SONNET;
 // Fable 5 — модель с "thinking"-режимом, которая при недостаточном max_tokens тратит
 // весь бюджет на невидимые reasoning-токены и обрезает финальный ответ (проверено на
 // реальном прогоне: completion_tokens упирался ровно в max_tokens). effort=low экономит
