@@ -1,0 +1,52 @@
+name: MAST NOHARM 30-case full Doctor Opus consilium
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-noharm30-full.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  full-consilium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 165
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Restore three paid official baseline answers instead of billing them twice
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p internal-results/noharm-30-cache
+          gh run download 41233224457 --repo ${{ github.repository }} --name noharm-internal-pilot-3-baselines --dir internal-results/noharm-30-cache
+          test -s internal-results/noharm-30-cache/answers.jsonl
+      - name: Run full multiagent Doctor Opus on remaining official NOHARM cases
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.noharm30.full.live.test.ts --testTimeout=9000000
+      - name: Judge readiness (do not initiate charges on a separate Gemini account)
+        if: always()
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -n "$GEMINI_API_KEY" ]; then
+            echo "OFFICIAL_NOHARM_JUDGE_KEY_AVAILABLE yes"
+          else
+            echo "OFFICIAL_NOHARM_JUDGE_KEY_AVAILABLE no"
+          fi
+      - name: Save baseline output, case ledger and cost
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-full-consilium-noharm30
+          path: benchmark/internal-results/noharm-30-system/
+          retention-days: 21
+          if-no-files-found: warn
