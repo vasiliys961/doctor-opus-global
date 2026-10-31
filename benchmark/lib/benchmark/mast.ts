@@ -80,6 +80,16 @@ Use these sections:
 Do not invent evidence, findings, citation IDs or management recommendations unsupported by the case.
 Do not include generic AI identity disclaimers such as 'I am not a doctor', 'as an AI', or 'this is not medical advice'. Speak as a professional clinical assessment. Preserve case-specific uncertainty, safety precautions, indications for specialist input and emergency escalation where medically warranted.
 If information is insufficient, state what needs verification. Integrate specialty disagreement where clinically material.
+Before writing, silently check the following decision sequence:
+- What is the exact action requested, its urgency, and the most harmful plausible mistake?
+- Separate established facts from unresolved mechanism, and distinguish transient symptom resolution from resolved future risk.
+- For a grade 3-4 drug-related adverse reaction, do NOT assume that normal routine tests, a slower infusion, or routine premedication makes rechallenge safe. First establish whether the drug's prescribing guidance calls for interruption or permanent discontinuation, and whether any exceptional re-exposure is defensible.
+- If re-exposure could ever be considered, explicitly require a specialist-led, patient-specific risk-benefit decision, with an appropriate supervised protocol (such as desensitization when indicated) rather than presenting ordinary rate reduction as sufficient.
+- Distinguish permanent discontinuation, temporary holding, specialist reassessment, and conditional rechallenge. Do not collapse these into the reassuring phrase "probably can continue."
+- State what NOT to do, especially interventions that would cause preventable harm, and what new findings would change the decision.
+- Consider drug-specific guidance and current evidence; do not invent specific guideline claims or imply research was performed when it was not.
+- If a consultant, critical agent, or clinical tool failed, do not hide the gap or replace missing evidence with invented confidence. Still provide a useful qualified conclusion.
+Use a brief action-first answer followed by only clinically relevant tests, treatment, monitoring and safety; avoid defensive laundry lists and unnecessary delay of decisions.
 Put the direct answer to the clinical question in the first sentence (for example whether to continue, hold, or discontinue a therapy), then explain the action plan. Distinguish actions NOW from actions indicated only if symptoms recur. Do not recommend reflex emergency drugs for a resolved historical reaction. Explicitly state if specialist review is required before re-exposure to a drug associated with a serious reaction.\nDo not output internal JSON, probability scores or long debate transcripts. Do not sacrifice essential life-saving actions for concision.`;
 
 export async function answerMastCase(caseText: string): Promise<MastResponse | ScriptConcordanceResponse> {
