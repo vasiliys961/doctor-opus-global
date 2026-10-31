@@ -8,6 +8,13 @@ import { safeError, safeLog } from '@/lib/logger';
 import { postLlmChatCompletionsWithFallback } from '@/lib/llm-provider';
 
 const REQUEST_TIMEOUT_MS = 60000;
+/** Session-level actual API accounting for the opt-in, single-process internal NOHARM pilot.
+ * No prompts/responses, identifying information or credential values are retained here.
+ * OpenRouter usage.cost is authoritative when present; zero is never assumed to mean free.
+ */
+const actualUsage = { pricedCalls: 0, unpricedCalls: 0, failedCalls: 0, promptTokens: 0, completionTokens: 0, costUsd: 0 };
+export function getDiagnosticApiUsageSnapshot() { return { ...actualUsage }; }
+
 
 export interface LlmCallResult {
   content: string;
@@ -60,7 +67,14 @@ async function callOpenRouterOnce(params: {
     const content: string = data?.choices?.[0]?.message?.content || '';
     const promptTokens: number = data?.usage?.prompt_tokens || 0;
     const completionTokens: number = data?.usage?.completion_tokens || 0;
-    const costUsd = calculateCost(promptTokens, completionTokens, model).totalCostUsd;
+    const rawCost: unknown = data?.usage?.cost;
+    const measuredCost = typeof rawCost === 'number' ? rawCost : (typeof rawCost === 'string' && rawCost.trim() ? Number(rawCost) : NaN);
+    const hasMeasuredCost = Number.isFinite(measuredCost) && measuredCost >= 0;
+    const costUsd = hasMeasuredCost ? measuredCost : calculateCost(promptTokens, completionTokens, model).totalCostUsd;
+    actualUsage.promptTokens += promptTokens;
+    actualUsage.completionTokens += completionTokens;
+    if (hasMeasuredCost) { actualUsage.pricedCalls++; actualUsage.costUsd += measuredCost; }
+    else actualUsage.unpricedCalls++;
 
     safeLog(`[CONSILIUM] ${model} completed: ${promptTokens}+${completionTokens} tokens`);
     if (completionTokens >= maxTokens && maxTokens > 0) {
@@ -71,6 +85,7 @@ async function callOpenRouterOnce(params: {
 
     return { content, promptTokens, completionTokens, costUsd, model };
   } catch (error: any) {
+    actualUsage.failedCalls++;
     return {
       content: '',
       promptTokens: 0,
