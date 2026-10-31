@@ -23,7 +23,15 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --ignore-scripts
-      - name: Verify configured provider secrets (names only)\n        env:\n          POLZA_KEY: ${{ secrets.LLM_API_KEY }}\n          ROUTER_KEY: ${{ secrets.OPENROUTER_API_KEY }}\n        run: |\n          test -n "$POLZA_KEY" && echo 'Polza key: present' || echo 'Polza key: missing'\n          test -n "$ROUTER_KEY" && echo 'OpenRouter key: present' || echo 'OpenRouter key: missing'\n          test -n "$POLZA_KEY" && test -n "$ROUTER_KEY"\n      - name: Unit test — response format
+      - name: Verify configured provider secrets (names only)
+        env:
+          POLZA_KEY: ${{ secrets.LLM_API_KEY }}
+          ROUTER_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          test -n "$POLZA_KEY" && echo 'Polza key: present' || echo 'Polza key: missing'
+          test -n "$ROUTER_KEY" && echo 'OpenRouter key: present' || echo 'OpenRouter key: missing'
+          test -n "$POLZA_KEY" && test -n "$ROUTER_KEY"
+      - name: Unit test — response format
         run: npx vitest run lib/benchmark/mast.test.ts
       - name: Baseline TypeScript audit (nonblocking, existing unrelated errors)
         continue-on-error: true
