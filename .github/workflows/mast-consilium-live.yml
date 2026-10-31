@@ -1,0 +1,26 @@
+name: MAST full consilium synthetic integration
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - '.github/workflows/mast-consilium-live.yml'
+      - 'benchmark/lib/benchmark/mast.live.test.ts'
+jobs:
+  consilium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Execute live multi-agent consilium (synthetic case only)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+          BENCHMARK_PRIMARY_PROVIDER: openrouter
+        run: npx vitest run lib/benchmark/mast.live.test.ts --testTimeout=420000
