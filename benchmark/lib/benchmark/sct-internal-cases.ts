@@ -118,7 +118,7 @@ export const SCT_PILOT_CASES = [
 ] as const;
 export const SCT_GUIDELINE = "# Script Concordance Testing\n\nYou are taking a Script Concordance Test, which evaluates your understanding of medical knowledge.\n\nIn this test, you will evaluate how new information impacts a specific hypothesis. Use the following scale to rate the impact:\n\n-2: Strongly decreases the likelihood of the hypothesis\n-1: Slightly decreases the likelihood of the hypothesis\n0: No effect on the likelihood of the hypothesis\n+1: Slightly increases the likelihood of the hypothesis\n+2: Strongly increases the likelihood of the hypothesis\n\n## Response format\n\nRespond with \"Rating: \" followed by a rating (-2, -1, 0, +1, +2) and a brief explanation for your choice. \n\nThis is an exam, and you are required to provide a valid answer.\n";
 export const SCT_TESTCASE_TEMPLATE = "## Scenario\n\n{{ scenario }}\n\n## Hypothesis\n\n{{ hypothesis }}\n\n## Additional Information\n\n{{ additional information }}";
-export function buildOfficialSctPrompt(item: typeof SCT_PILOT_CASES[number]): string {
+export function buildOfficialSctPrompt(item: {scenario:string;hypothesis:string;new_information:string}): string {
   return SCT_GUIDELINE.replace(' and a brief explanation for your choice', '')
     + SCT_TESTCASE_TEMPLATE.replace('{{ scenario }}',item.scenario).replace('{{ hypothesis }}',item.hypothesis).replace('{{ additional information }}',item.new_information);
 }
