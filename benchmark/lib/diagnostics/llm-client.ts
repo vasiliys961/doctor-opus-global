@@ -5,9 +5,8 @@
  */
 import { calculateCost } from '@/lib/cost-calculator';
 import { safeError, safeLog } from '@/lib/logger';
-import { getLlmApiKey, getLlmChatCompletionsUrl } from '@/lib/llm-provider';
+import { postLlmChatCompletionsWithFallback } from '@/lib/llm-provider';
 
-const OPENROUTER_API_URL = getLlmChatCompletionsUrl();
 const REQUEST_TIMEOUT_MS = 60000;
 
 export interface LlmCallResult {
@@ -25,24 +24,6 @@ interface LlmMessagePart {
   image_url?: { url: string };
 }
 
-function getApiKey(): string {
-  const apiKey = getLlmApiKey().trim();
-  if (!apiKey) {
-    throw new Error('LLM_API_KEY (or OPENROUTER_API_KEY) is not configured. Check environment variables.');
-  }
-  return apiKey;
-}
-
-async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 async function callOpenRouterOnce(params: {
   systemPrompt: string;
   userContent: string | LlmMessagePart[];
@@ -53,16 +34,8 @@ async function callOpenRouterOnce(params: {
   const { systemPrompt, userContent, model, maxTokens, reasoningEffort } = params;
 
   try {
-    const apiKey = getApiKey();
-    const response = await fetchWithTimeout(OPENROUTER_API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://doctor-opus.ru',
-        'X-Title': 'Doctor Opus Consilium',
-      },
-      body: JSON.stringify({
+    const response = await postLlmChatCompletionsWithFallback({
+      
         model,
         messages: [
           { role: 'system', content: systemPrompt },
@@ -76,8 +49,7 @@ async function callOpenRouterOnce(params: {
         // историю правок. reasoning.effort=low оставляет модели достаточно места
         // на видимый ответ при разумном max_tokens.
         ...(reasoningEffort ? { reasoning: { effort: reasoningEffort } } : {}),
-      }),
-    }, REQUEST_TIMEOUT_MS);
+      }, { timeoutMs: REQUEST_TIMEOUT_MS });
 
     if (!response.ok) {
       const errorText = await response.text();
