@@ -17,7 +17,9 @@ describe('MAST response adapter', () => {
     expect(Object.keys(output)).toEqual(['response']);
     expect(output.response).toContain('Test diagnosis');
     expect(output.response).toContain('Check safety');
-    it('recognizes official SCT prompt and validates ratings', () => {
+  });
+
+  it('recognizes official SCT prompt and validates ratings', () => {
     expect(isScriptConcordancePrompt('# Script Concordance Testing\n\n## Case Details\nCase')).toBe(true);
     expect(isScriptConcordancePrompt('Clinical case')).toBe(false);
     expect(parseScriptConcordance('{"Rating":-1,"Rationale":"New evidence weakens hypothesis"}')).toEqual({
@@ -25,6 +27,4 @@ describe('MAST response adapter', () => {
     });
     expect(() => parseScriptConcordance('{"Rating":3,"Rationale":"Invalid"}')).toThrow();
   });
-});
-
 });
