@@ -1,4 +1,5 @@
 name: MAST official NOHARM case live
+# Re-run public All001 for full clinical rubric audit
 on:
   push:
     branches: [feat/mast-consilium-adapter]
