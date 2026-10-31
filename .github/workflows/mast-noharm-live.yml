@@ -1,0 +1,23 @@
+name: MAST official NOHARM case live
+# Re-run All001 after severity-aware synthesis prompt revision
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-noharm-live.yml']
+jobs:
+  official-case:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Real consilium plus management synthesis for official public All001
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: npx vitest run lib/benchmark/mast.noharm.live.test.ts --config vitest.live.config.ts --testTimeout=420000

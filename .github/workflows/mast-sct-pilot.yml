@@ -1,0 +1,31 @@
+name: MAST internal SCT eight-case pilot
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-sct-pilot.yml']
+  workflow_dispatch:
+jobs:
+  sct:
+    runs-on: ubuntu-latest
+    timeout-minutes: 23
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Run official public SCT cases against Doctor Opus
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.sct.pilot.live.test.ts --testTimeout=1200000
+      - name: Save internal answers and scores
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mast-internal-sct-eight-cases
+          path: benchmark/internal-results/sct-pilot/
+          retention-days: 7
+          if-no-files-found: warn
