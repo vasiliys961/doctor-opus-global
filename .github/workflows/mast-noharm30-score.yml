@@ -58,6 +58,14 @@ jobs:
             model_id: doctor-opus-consilium-v1
           YAML
           python score.py --model-config config/models/doctor-opus-consilium-v1.yaml --benchmark-config config/benchmark.yaml --k 1 --threads 2
+      - name: Generate clinical error audit from official judged actions
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          python ../../../benchmark/scripts/noharm-clinical-report.py \
+            ../../results/raw/donoharm/default/doctor-opus-consilium-v1_judged.jsonl \
+            dataset/rubrics \
+            ../../../source-results/ledger.jsonl \
+            ../../../source-results/error-audit.md
       - name: Preserve judged output, CSV and case logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -68,5 +76,6 @@ jobs:
             mast-reference/results/raw/donoharm/default/doctor-opus-consilium-v1_judged.jsonl
             source-results/summary.json
             source-results/ledger.jsonl
+            source-results/error-audit.md
           retention-days: 21
           if-no-files-found: warn
