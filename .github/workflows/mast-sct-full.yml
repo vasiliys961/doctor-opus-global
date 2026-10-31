@@ -1,0 +1,31 @@
+name: MAST internal SCT full 174 open items
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-sct-full.yml']
+  workflow_dispatch:
+jobs:
+  sct-full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: SCT official public set with actual OpenRouter costs
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.sct.full.live.test.ts --testTimeout=2400000
+      - name: Save answers metrics and score
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-sct-public-174
+          path: benchmark/internal-results/sct-full/
+          retention-days: 7
+          if-no-files-found: warn
