@@ -1,4 +1,5 @@
 name: MAST SCT single failed case retry
+# Rerun after registering the test in Vitest
 on:
   push:
     branches: [feat/mast-consilium-adapter]
