@@ -37,8 +37,8 @@ jobs:
             });
             const j=await response.json();
             const content=j?.choices?.[0]?.message?.content;
-            const passed=response.ok&&typeof content==='string'&&content.length>=20;
-            console.log(JSON.stringify({http_status:response.status,success:passed,model:body.model,latency_ms:Date.now()-started,prompt_tokens:j?.usage?.prompt_tokens??null,completion_tokens:j?.usage?.completion_tokens??null,output_characters:content?.length??0}));
+            const passed=response.ok&&typeof content==='string'&&content.length>=5 && /diabet|hyperglyc|glycemi/i.test(content);
+            console.log(JSON.stringify({http_status:response.status,success:passed,model:body.model,latency_ms:Date.now()-started,prompt_tokens:j?.usage?.prompt_tokens??null,completion_tokens:j?.usage?.completion_tokens??null,output_characters:content?.length??0,clinical_keyword_match:/diabet|hyperglyc|glycemi/i.test(content||'')}));
             if(!passed) process.exitCode=1;
           }
           run().catch(e=>{console.error('Live model request failed:', e.name);process.exitCode=1});
