@@ -14,7 +14,7 @@ export async function postLlmChatCompletionsWithFallback(payload: unknown, optio
   if (!baseUrls.length) throw new Error('LLM provider is not configured');
   for (const endpoint of baseUrls) {
     try {
-      const response = await fetch(endpoint.base.replace(/\\/+$/, '') + '/chat/completions', {
+      const response = await fetch(endpoint.base.replace(/\/+$/, '') + '/chat/completions', {
         method: 'POST',
         headers: { Authorization: 'Bearer ' + endpoint.key, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
