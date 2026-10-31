@@ -8,7 +8,7 @@ export interface ScriptConcordanceResponse { Rating: number; Rationale: string }
 
 export function isScriptConcordancePrompt(text: string): boolean {
   return text.trimStart().startsWith('# Script Concordance Testing') &&
-    text.includes('## Case Details');
+    ((text.includes('## Scenario') && text.includes('## Hypothesis') && text.includes('## Additional Information')) || text.includes('## Case Details'));
 }
 
 export function parseScriptConcordance(content: string): ScriptConcordanceResponse {
