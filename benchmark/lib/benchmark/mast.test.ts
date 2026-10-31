@@ -22,7 +22,7 @@ describe('MAST response adapter',()=>{
   it('passes the complete clinical evidence into final management synthesis',()=>{
     const context=buildMastManagementContext('Hypoxic patient',example);
     for(const fragment of ['Hypoxic patient','Pulmonary embolism','Pulmonology','anticoagulation','Consider bleeding risk','Avoid unnecessary repeat imaging']) expect(context).toContain(fragment);
-    for(const fragment of ['Treatment and management','Monitoring and follow-up','Immediate actions / triage','Safety and stewardship']) expect(MAST_MANAGEMENT_PROMPT).toContain(fragment);
+    for(const fragment of ['grade 3-4 drug-related adverse reaction','specialist-led','normal routine tests','probably can continue','Treatment and management','Monitoring and follow-up','Immediate actions / triage','Safety and stewardship']) expect(MAST_MANAGEMENT_PROMPT).toContain(fragment);
   });
   it('recognizes SCT and enforces the official rating scale',()=>{
     expect(isScriptConcordancePrompt('# Script Concordance Testing\n\n## Case Details\nCase')).toBe(true);
