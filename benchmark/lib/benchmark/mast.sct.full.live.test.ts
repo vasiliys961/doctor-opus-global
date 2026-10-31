@@ -59,7 +59,7 @@ it('official full open SCT (174): measured bill and expert alignment',async()=>{
     if(!distribution||distribution.length!==5) throw new Error('Expert rubric missing for '+item.id);
     const started=Date.now();
     try{
-      const answer=await answerMastCase(buildOfficialSctPrompt(item as Parameters<typeof buildOfficialSctPrompt>[0]));
+      const answer=await answerMastCase(buildOfficialSctPrompt(item));
       if(!('Rating' in answer)) throw new Error('Wrong response schema');
       const after=getDiagnosticApiUsageSnapshot();
       const max=Math.max(...distribution);
