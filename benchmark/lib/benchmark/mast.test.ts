@@ -27,6 +27,7 @@ describe('MAST response adapter',()=>{
   it('recognizes SCT and enforces the official rating scale',()=>{
     expect(isScriptConcordancePrompt('# Script Concordance Testing\n\n## Case Details\nCase')).toBe(true);
     expect(isScriptConcordancePrompt('Clinical case')).toBe(false);
+    expect(isScriptConcordancePrompt('# Script Concordance Testing\n\n## Scenario\nCase\n\n## Hypothesis\nIf...\n\n## Additional Information\nFinding')).toBe(true);
     expect(parseScriptConcordance('{"Rating":-1,"Rationale":"Finding weakens the hypothesis"}')).toEqual({Rating:-1,Rationale:'Finding weakens the hypothesis'});
     expect(()=>parseScriptConcordance('{"Rating":3,"Rationale":"Invalid"}')).toThrow();
   });
