@@ -1,0 +1,88 @@
+# Only this completed frozen multiagent inference run may trigger automatic scoring.
+# Installed on the default branch because GitHub workflow_run requires that.
+# Never re-runs inference, modifies patient data, or uploads a leaderboard entry.
+name: Doctor Opus auto-score completed 30-case consilium
+on:
+  workflow_run:
+    workflows: ['MAST NOHARM 30-case full Doctor Opus consilium']
+    types: [completed]
+    branches: [feat/mast-consilium-adapter]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: doctor-opus-noharm30-autoscore-41237938481
+  cancel-in-progress: false
+jobs:
+  auto-score:
+    if: ${{ github.event.workflow_run.id == 41237938481 && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'feat/mast-consilium-adapter' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MAST_OPENROUTER_JUDGE_CAP_USD: '3'
+      MAST_JUDGE_LEDGER: source-results/judge-cost.jsonl
+    steps:
+      - name: Check out pinned internal scorer from benchmark branch
+        uses: actions/checkout@v4
+        with:
+          ref: b5bde58e711a5bc541d9b20bc30ff0b0696414a2
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate completed full-consilium response artifact before any judge billing
+        run: |
+          mkdir -p source-results
+          gh run download 41237938481 --repo "${{ github.repository }}" --name doctor-opus-full-consilium-noharm30 --dir source-results
+          python - <<'PY'
+          import json, pathlib
+          summary=json.loads(pathlib.Path('source-results/summary.json').read_text())
+          assert summary.get('completed')==30 and summary.get('failed')==0 and summary.get('officialScoreReady'), summary
+          assert summary.get('system') == 'Doctor Opus Consilium full multiagent pathway', summary
+          answers=[json.loads(x) for x in pathlib.Path('source-results/doctor-opus-consilium.jsonl').read_text().splitlines() if x.strip()]
+          assert len(answers)==30 and len({(x['id'], x['trial']) for x in answers})==30
+          assert all(len(x.get('response','').strip())>=150 for x in answers)
+          print('Validated 30 unique original full-system answers; proceeding with internal scoring')
+          PY
+      - name: Clone original pinned NOHARM scoring methodology
+        run: |
+          git clone -q https://github.com/ARISENetwork/mast.git mast-reference
+          git -C mast-reference checkout -q 57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          python -m pip install -q -r mast-reference/benchmarks/donoharm/requirements.txt
+          cp benchmark/scripts/noharm-openrouter-judge-transport.py mast-reference/benchmarks/donoharm/judge/gemini_sdk.py
+          mkdir -p mast-reference/results/raw/donoharm/default
+          cp source-results/doctor-opus-consilium.jsonl mast-reference/results/raw/donoharm/default/doctor-opus-consilium-v1-autoscore.jsonl
+      - name: Judge 30 cases with original two-stage rubrics via OpenRouter Gemini
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          cat > config/models/doctor-opus-consilium-v1-autoscore.yaml <<'YAML'
+          model:
+            name: doctor-opus-consilium-v1-autoscore
+            platform: openrouter
+            model_id: doctor-opus-consilium
+          YAML
+          python score.py --model-config config/models/doctor-opus-consilium-v1-autoscore.yaml --benchmark-config config/benchmark.yaml --k 1 --threads 1
+      - name: Create case-level clinical error and safety audit
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          python ../../../benchmark/scripts/noharm-clinical-report.py \
+            ../../results/raw/donoharm/default/doctor-opus-consilium-v1-autoscore_judged.jsonl \
+            dataset/rubrics \
+            ../../../source-results/ledger.jsonl \
+            ../../../source-results/error-audit.md
+      - name: Save scoring, costs and clinical audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-noharm30-autoscore-results
+          path: |
+            mast-reference/results/scores/donoharm/default/doctor-opus-consilium-v1-autoscore.csv
+            mast-reference/results/raw/donoharm/default/doctor-opus-consilium-v1-autoscore_judged.jsonl
+            source-results/judge-cost.jsonl
+            source-results/summary.json
+            source-results/ledger.jsonl
+            source-results/error-audit.md
+          retention-days: 21
+          if-no-files-found: warn
