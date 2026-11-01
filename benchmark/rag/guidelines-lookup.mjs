@@ -37,7 +37,9 @@ export function selectContext(searchText,rows){
   // HIV exposure, testing, PrEP and PEP are NOT the same as HIV opportunistic
   // infection management; do not let these six OI chapters contaminate them.
   const specificOI=/pneumocystis|pneumocystis jirovecii|toxoplasm|mycobacterium avium|MAC disease/i.test(q);
-  const hivPneumonia=/\bHIV\b[\s\S]{0,450}\b(pneumonia|opportunistic infection)\b|\b(pneumonia|opportunistic infection)\b[\s\S]{0,450}\bHIV\b/i.test(q);
+  const explicitlyNoHiv=/\b(?:HIV[- ]negative|without HIV|no known HIV|not (?:yet )?(?:been )?diagnosed with HIV)\b/i.test(q);
+  const confirmedHiv=/\b(?:with HIV|has HIV|advanced HIV|HIV[- ]positive|HIV infection|living with HIV|people with HIV|diagnosed with HIV)\b/i.test(q);
+  const hivPneumonia=confirmedHiv && /\b(pneumonia|opportunistic infection)\b/i.test(q) && !explicitlyNoHiv;
   if(q.length<15||!(specificOI||hivPneumonia))
     return {eligible:false,reason:'outside current NIH opportunistic-infection guidance scope',rows:[]};
   return {eligible:true,reason:'NIH HIV opportunistic-infections scope',rows};
