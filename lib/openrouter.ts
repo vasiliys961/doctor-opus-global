@@ -605,7 +605,7 @@ export async function extractImageJSON(options: {
     throw new Error('No images were provided for JSON extraction');
   }
   
-  const smartRoutingEnabled = (options.enableSmartRouting ?? true) && isTruthyEnv(process.env.SMART_ROUTING_ENABLED, false);
+  const smartRoutingEnabled = (options.enableSmartRouting ?? true) && isTruthyEnv(process.env.SMART_ROUTING_ENABLED, true);
   const preferModel = options.preferModel || MODELS.GEMINI_3_FLASH;
 
   // Получаем детальные инструкции специалиста для этого типа исследования
