@@ -37,3 +37,11 @@ it('uses actual specialty report contracts instead of generic chat instructions'
   expect(buildReportInstruction('ecg')).toContain('ECG');
   expect(buildReportInstruction('dermatoscopy')).toMatch(/dermatolog/i);
 });
+
+it('escalates high-confidence critical visual findings to an independent second read',()=>{
+  const evidence=JSON.parse(valid);
+  evidence.critical_flags=[{flag:'possible critical abnormal silhouette',basis:'image finding',confidence:0.9}];
+  const decision=getVisionRoutingDecision('xray',evidence);
+  expect(decision.escalate).toBe(true);
+  expect(decision.reasons).toContain('critical_visual_flag');
+});
