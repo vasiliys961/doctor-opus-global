@@ -52,7 +52,7 @@
       "publisher": "NIH ClinicalInfo",
       "license": "PUBLIC-DOMAIN",
       "domain": "clinical-guidelines",
-      "expectedKeyword": "opportunistic"
+      "expectedKeyword": "Introduction"
     },
     {
       "id": "nih-hiv-oi-changes",
