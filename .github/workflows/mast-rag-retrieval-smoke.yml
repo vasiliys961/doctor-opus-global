@@ -1,0 +1,42 @@
+name: Doctor Opus RAG FDA retrieval quality smoke
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/mast-rag-retrieval-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  test-real-fda-retrieval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download verified source/index artifact from public FDA job
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 41277447526 --repo "${{ github.repository }}" --name doctor-opus-rag-openfda-public-safety-index --dir benchmark
+          test -s benchmark/rag-index-openfda/index.jsonl
+      - name: Reuse the local E5 model cache
+        uses: actions/cache@v4
+        with:
+          path: benchmark/rag/.cache
+          key: benchmark-e5-small-v1
+      - run: npm install --prefix benchmark/rag --no-audit --no-fund
+      - name: Verify safe retrieval using four synthetic medication cases and a negative control
+        run: node benchmark/rag/eval-retrieval.mjs benchmark/rag-index-openfda/index.jsonl benchmark/rag-index-openfda/retrieval-smoke.json
+      - name: Persist evidence source-selection and query results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-rag-openfda-retrieval-validation
+          path: benchmark/rag-index-openfda/retrieval-smoke.json
+          retention-days: 21
+          if-no-files-found: warn
