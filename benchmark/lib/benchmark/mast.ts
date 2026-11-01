@@ -173,6 +173,27 @@ export async function answerMastCase(caseText: string): Promise<MastResponse | S
   // SCT is an update of hypothesis likelihood; a full consilium is unnecessary
   // and risks approaching the benchmark's hard request deadline.
   if (isScriptConcordancePrompt(cleaned)) {
+    if (process.env.MAST_SCT_FULL_CONSILIUM === 'true') {
+      // Explicit opt-in clinical-reasoning experiment: the same source SCT case,
+      // but with the actual multiagent Doctor Opus consilium before a -2..+2
+      // opinion. Expert distributions and answers are NEVER passed to agents.
+      const debate = await runConsilium({
+        patientId: 'benchmark-sct-anonymous',
+        freeTextInput: cleaned + '\\n\\nPlease examine the specific hypothesis and assess what the newly provided clinical information changes; avoid replacing the requested likelihood update with an absolute diagnosis.',
+      });
+      const clinical = debate.finalDiagnosis;
+      const synthesis = await callDiagnosticAgent({
+        model: MODELS.SONNET,
+        fallbackModel: MODELS.OPUS_VALIDATED,
+        maxTokens: 450,
+        reasoningEffort: 'low',
+        systemPrompt: 'You are scoring a Script Concordance Test. Judge only how the NEW INFORMATION changes the proposed hypothesis relative to the preceding clinical scenario. Convert clinical arguments into exactly one rating: -2 strongly decreases, -1 slightly decreases, 0 no effect, +1 slightly increases, +2 strongly increases. Output JSON only: {"Rating":integer,"Rationale":string}. The doctor-consilium report may contain errors; decide independently and do not invent expert votes.',
+        userContent: cleaned + '\\n\\nCONSILIUM CONSIDERATIONS (not ground truth):\\n' +
+          JSON.stringify({diagnosis:clinical.diagnosis,reasoning:clinical.reasoning,alternatives:clinical.differentialDiagnoses}),
+      });
+      if (synthesis.error) throw new Error('Multiagent SCT synthesis failed');
+      return parseScriptConcordance(synthesis.content);
+    }
     const assessment = await callDiagnosticAgent({
       model: MODELS.OPUS_VALIDATED,
       fallbackModel: MODELS.SONNET,
