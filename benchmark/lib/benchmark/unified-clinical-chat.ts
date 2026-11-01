@@ -57,6 +57,10 @@ export type UnifiedClinicalResult={
  evidence:EvidenceItem[];
  report:string;
  totalConsiliumCostUsd:number;
+ totalSpecialistCostUsd:number;
+ totalEstimatedCostUsd:number;
+ elapsedMs:number;
+ cpuDetectorRuns:Array<{sourceId:string;state:'ready'|'timed_out'|'failed'|'disabled';elapsedMs:number}>;
 };
 
 /** Neither data filenames nor source study timestamps are patient identifiers. */
@@ -113,6 +117,9 @@ export async function runUnifiedClinicalChat(
  input:UnifiedClinicalRequest,options:UnifiedClinicalOptions={}
 ):Promise<UnifiedClinicalResult>{
  validateUnifiedClinicalRequest(input);
+ const startedAt=Date.now();
+ let specialistCostUsd=0;
+ const cpuDetectorRuns:UnifiedClinicalResult['cpuDetectorRuns']=[];
  const summaries:UnifiedClinicalResult['sourceSummaries']=[];
  const reports:Array<{sourceId:string;kind:string;report:string;limitations:string[]}>=[];
  const evidence:EvidenceItem[]=[];
@@ -121,6 +128,7 @@ export async function runUnifiedClinicalChat(
  for(const study of input.studies){
   if(study.kind==='ecg-opus'){
    const result=await analyzeECGOpusImage(study.input);
+   if(Number.isFinite(result.costUsd)&&result.costUsd>=0)specialistCostUsd+=result.costUsd;
    const limitations=[
     'Visual ECG and algorithmic digital measurements are unverified; not ECGFounder',
     'Absence of source calibration or uncertain atrial activity limits interpretation'
@@ -132,6 +140,8 @@ export async function runUnifiedClinicalChat(
     coverage:'partial',model:result.models.join('+'),limitations});
   }else if(study.kind==='comparison'){
    const result=await compareBenchmarkMedicalImages(study.input);
+   if(Number.isFinite(result.estimatedCostUsd)&&result.estimatedCostUsd>=0)
+    specialistCostUsd+=result.estimatedCostUsd;
    const limitations=[...result.limitations,
     'Comparison is generated from selected originals only; image registration or calibrated measurement unavailable'];
    summaries.push({sourceId:study.sourceId,kind:study.kind,status:'unverified',limitations});
@@ -152,6 +162,10 @@ export async function runUnifiedClinicalChat(
      ()=>analyzeBenchmarkMedicalImage(study.input),cpu,
      {detectorMaxMs:8000,afterVisionGraceMs:1500}
    );
+   if(Number.isFinite(pair.visual.estimatedCostUsd)&&pair.visual.estimatedCostUsd>=0)
+    specialistCostUsd+=pair.visual.estimatedCostUsd;
+   cpuDetectorRuns.push({sourceId:study.sourceId,state:pair.detector.state,
+    elapsedMs:pair.detector.elapsedMs});
    const limitations=[
     'Only submitted radiograph reviewed; other views or comparisons not assessed',
     'Image reading is model inference without independent physician confirmation',
@@ -209,6 +223,10 @@ export async function runUnifiedClinicalChat(
   reviewReason:result.reviewReason||arbiter.limitations.join('; '),
   sourceCount:input.studies.length,sourceSummaries:summaries,
   evidence,report:formatMastAnswer(result).response,
-  totalConsiliumCostUsd:result.totalCostUsd
+  totalConsiliumCostUsd:result.totalCostUsd,
+  totalSpecialistCostUsd:Number(specialistCostUsd.toFixed(6)),
+  totalEstimatedCostUsd:Number((specialistCostUsd+result.totalCostUsd).toFixed(6)),
+  elapsedMs:Date.now()-startedAt,
+  cpuDetectorRuns
  };
 }
