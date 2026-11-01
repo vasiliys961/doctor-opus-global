@@ -144,3 +144,14 @@ This file was copied from the **read-only parent `main` roadmap** into `feat/mas
 5. **Preservation/privacy**: archive open test artifacts with dataset hash, model version, prompt/commit SHA, score, cost, duration, failure counts; never store private MAST inputs/outputs after independent evaluation. Budget guard checked between full consilium cases is *not* a hard financial cap.
 
 Supplementary methods and exact paths: [short pilot audit](results/2026-11-01-short-pilot-readiness-and-parent-audit.md).
+
+
+## Evidence addendum — cross-line, source-linked experiments 2026-11-01
+
+See [current full cross-line evaluation report](results/2026-11-01-mast-coverage-pilot-update.md).
+
+- **Chest X-ray**: 2 licensed original JPEGs, 2/2 actual image-to-report responses; $0.04123 standard. On an ambiguous/critical pediatric film, conditional Gemini Pro second read exposed disagreement about cardiomegaly and included pneumonia in the differential; 2/2 second-run reports, $0.05879. **Not ReXrank Mini**; clinical accuracy and report quality not yet independently graded.
+- **Dermatoscopy**: 2 licensed Commons images, 2/2 actual image-to-report responses, $0.0589065; benign nevus favored appropriately, melanoma remained a diagnostic concern after limited-quality independent second read. **Not official DDI/MIDAS**; only separate registration grants Stanford dataset access.
+- **Agentic EHR-like tool simulation**: two fully synthetic scenarios. Gemini Flash 1/2 tasks, $0.01032, two malformed actions; Sonnet 5.5 2/2 tasks, $0.03087, zero format failures, 8.6–9.0s. **Not actual FHIR R4 EHR nor MedAgentBench/PhysicianBench**.
+- **Candidate debate model**: Fable was replaced with Claude Opus 5.5 as the DEFAULT for hypothesis/challenger/checklist in THIS contest branch only. Sonnet is fallback. Clinical one-case verification [run 41294260683](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41294260683) initiated; outcome must be checked before claiming competitiveness.
+- The mature parent `main` remains untouched. Keep synthetic and image research smoke distinct from independent official MAST scores.
