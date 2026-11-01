@@ -1,0 +1,33 @@
+name: MAST NOHARM A-B score recovery without model or judge calls
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-noharm-safety-label-recover.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  offline-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - name: Download the preserved public NOHARM one-case official rubric results
+        run: |
+          mkdir -p recovered
+          gh run download 41306593120 --repo "${{ github.repository }}" \
+            --name doctor-opus-noharm-official-label-a-b-onecase --dir recovered
+      - name: Parse per-metric CSV without repeating any paid LLM calls
+        run: python benchmark/scripts/summarize-noharm-label-ab.py recovered
+      - name: Retain verified delta and exact measured costs
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-noharm-safety-label-ab-summary
+          path: benchmark/results/label-backed-noharm-ab-recovery.json
+          retention-days: 21
