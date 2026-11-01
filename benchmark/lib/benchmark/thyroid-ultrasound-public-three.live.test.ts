@@ -13,7 +13,7 @@ const CASES=[
  {id:'thyroid-nodule-a',file:'Thyroid_ultrasound_110321165224_1657430.jpg',caption:'thyroid nodule ultrasound'},
  {id:'thyroid-nodule-b',file:'Thyroid_ultrasound_110322095404_0959360.jpg',caption:'thyroid nodule ultrasound'},
 ] as const;
-const OUT='internal-results/thyroid-ultrasound-public-three';
+const OUT='internal-results/derm-public-two/thyroid-ultrasound-public-three';
 function directCommonsUrl(file:string){
   const hash=createHash('md5').update(file).digest('hex');
   return 'https://upload.wikimedia.org/wikipedia/commons/'+hash[0]+'/'+hash.slice(0,2)+'/'+file;
