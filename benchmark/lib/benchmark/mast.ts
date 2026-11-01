@@ -189,7 +189,7 @@ export async function answerMastCase(caseText: string): Promise<MastResponse | S
         reasoningEffort: 'low',
         systemPrompt: 'You are scoring a Script Concordance Test. Judge only how the NEW INFORMATION changes the proposed hypothesis relative to the preceding clinical scenario. Convert clinical arguments into exactly one rating: -2 strongly decreases, -1 slightly decreases, 0 no effect, +1 slightly increases, +2 strongly increases. Output JSON only: {"Rating":integer,"Rationale":string}. The doctor-consilium report may contain errors; decide independently and do not invent expert votes.',
         userContent: cleaned + '\\n\\nCONSILIUM CONSIDERATIONS (not ground truth):\\n' +
-          JSON.stringify({diagnosis:clinical.diagnosis,reasoning:clinical.reasoning,alternatives:clinical.differentialDiagnoses}),
+          JSON.stringify({diagnosis:clinical.diagnosis,reasoning:clinical.reasoning,alternatives:debate.hypotheses}),
       });
       if (synthesis.error) throw new Error('Multiagent SCT synthesis failed');
       return parseScriptConcordance(synthesis.content);
