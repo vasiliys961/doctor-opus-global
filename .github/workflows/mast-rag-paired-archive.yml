@@ -1,0 +1,86 @@
+name: Archive Doctor Opus open RAG paired clinical test
+on:
+  workflow_run:
+    workflows: ['Doctor Opus paired full-consilium FDA-RAG clinical pilot']
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: doctor-opus-archive-fda-rag-41277871937
+  cancel-in-progress: false
+jobs:
+  archive-paired-open-only:
+    if: ${{ github.event.workflow_run.id == 41277871937 && github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TARGET: benchmark/results/2026-11-01-noharm-fda-rag-paired-pilot
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the two independently graded public response arms
+        run: |
+          mkdir -p /tmp/rag-paired /tmp/rag-scored
+          gh run download 41277871937 --repo "${{ github.repository }}" --name doctor-opus-full-consilium-fda-rag-paired-pilot --dir /tmp/rag-paired
+          gh run download 41277871937 --repo "${{ github.repository }}" --name doctor-opus-full-consilium-fda-rag-paired-scored --dir /tmp/rag-scored
+      - name: Verify source is open public and copy exact observed results
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import json, shutil, os, hashlib
+          src=Path('/tmp/rag-paired')
+          scored=Path('/tmp/rag-scored')
+          output=Path(os.environ['TARGET'])
+          output.mkdir(parents=True,exist_ok=True)
+          pre=json.loads((src/'preregistration.json').read_text())
+          summary=json.loads((src/'summary.json').read_text())
+          judge=json.loads((scored/'pair-judged-summary.json').read_text())
+          assert pre['publicDatasetCommit']=='57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee'
+          assert summary['successfulPairs']==summary['plannedPairs']==4
+          assert judge['stats']['cases']==4
+          base={x['baseId'] for x in pre['cases']}
+          assert base=={'Endo009','GI002','GI004','Heme010'},base
+          files={}
+          for origin in [src,scored]:
+            for path in origin.rglob('*'):
+              if not path.is_file():continue
+              if path.name in ('preregistration.json','summary.json','ledger.jsonl',
+                'answers-control.jsonl','answers-rag.jsonl','pair-judged-summary.json',
+                'doctor-opus-v2-control.csv','doctor-opus-v2-fda-rag.csv',
+                'doctor-opus-v2-control_judged.jsonl','doctor-opus-v2-fda-rag_judged.jsonl'):
+                dest=output/path.name
+                shutil.copyfile(path,dest)
+                files[dest.name]=hashlib.sha256(dest.read_bytes()).hexdigest()
+          assert 'answers-control.jsonl' in files and 'answers-rag.jsonl' in files
+          assert 'pair-judged-summary.json' in files
+          meta={'benchmark':'First Do NOHARM v2, public perturbed k=1',
+            'comparison':'Same complete Doctor Opus v2 with and without openFDA medication RAG',
+            'sourceRun':'https://github.com/vasiliys961/doctor-opus-global/actions/runs/41277871937',
+            'judge':'MAST original 2-stage prompts and metrics, via OpenRouter, not canonical Google SDK',
+            'officialLeaderboardComparable':False,'publicTestDataOnly':True,
+            'sourceHashesSha256':files}
+          (output/'manifest.json').write_text(json.dumps(meta,indent=2)+'\n')
+          (output/'README.md').write_text(
+            '# Full Doctor Opus v2 + FDA RAG: paired pilot (four public variant cases)\n\n'
+            '**Not an official leaderboard result.** This is an internal paired comparison of'
+            ' two versions of the same medical system. The RAG arm reads public FDA'
+            ' prescribing labels, not benchmark rubrics or answers.\n\n'
+            'Read [pair-judged-summary.json](pair-judged-summary.json),'
+            ' [preregistration.json](preregistration.json), original response arms,'
+            ' per-case judgements and [manifest.json](manifest.json).\n\n'
+            'These are open, publicly published MAST cases only. Private official'
+            ' MAST prompts and outputs must not be retained under the submission rules.\n'
+          )
+          print('Validated public paired RAG test; saved files',sorted(files))
+          PY
+      - name: Commit public RAG evidence study to version-controlled repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$TARGET"
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(eval): persist public Doctor Opus paired FDA-RAG clinical ablation"
+            git push origin HEAD:main
+          fi
