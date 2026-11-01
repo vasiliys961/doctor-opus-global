@@ -1,0 +1,58 @@
+name: MAST extra imaging ECG Opus original three twelve-lead examples
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - '.github/workflows/mast-ecg-opus-public-three.yml'
+      - 'benchmark/lib/benchmark/ecg-opus-public-three.live.test.ts'
+      - 'benchmark/lib/benchmark/ecg-opus-image.ts'
+      - 'benchmark/scripts/render_ecg_opus_public_examples.py'
+      - 'benchmark/vitest.ecg-opus-public-three.config.ts'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ecg-opus-public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: vasiliys961/ecg-opus-global
+          ref: b0d1c3b5745dd348aa81670452aac0d6a7150fd8
+          path: ecg-opus-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Render three original source twelve-lead traces, no diagnosis labels
+        run: |
+          python -m pip install -q matplotlib
+          python benchmark/scripts/render_ecg_opus_public_examples.py ecg-opus-source/examples2 ecg-opus-rendered
+      - name: Install contest benchmark
+        run: npm install --no-audit --no-fund
+        working-directory: benchmark
+      - name: Run real ECG Opus image -> Gemini -> Opus on 3 cases
+        working-directory: benchmark
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.ecg-opus-public-three.config.ts run --testTimeout=900000
+      - name: Archive model ECG reports only, never raw signals/images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mast-ecg-opus-image-three-reports
+          path: benchmark/internal-results/ecg-opus-public-three/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Remove raw ECG waveforms and rendered images
+        if: always()
+        run: rm -rf ecg-opus-source ecg-opus-rendered
