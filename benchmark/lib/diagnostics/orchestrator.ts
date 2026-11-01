@@ -452,7 +452,11 @@ export async function runConsilium(
   let agentFailures = agentFailuresFromAmsc;
   let challengerFlaggedCritical = false;
 
-  for (let round = 0; round < MAX_DIAGNOSTIC_ROUNDS; round += 1) {
+  // Experimental contest-only limit: compare one versus two debate rounds
+  // without changing the original NOHARM baseline or parent Doctor Opus.
+  // Never make this the default without paired clinical validation.
+  const maxDebateRounds = process.env.MAST_CONSILIUM_ROUND_CAP === '1' ? 1 : MAX_DIAGNOSTIC_ROUNDS;
+  for (let round = 0; round < maxDebateRounds; round += 1) {
     state.round = round;
     const outputs = await runRound(caseInput, state, onProgress, round === 0 ? precomputedHypothesis : undefined);
     state.roundOutputs.push(outputs);
@@ -479,7 +483,7 @@ export async function runConsilium(
     state.disagreementScore = disagreement.score;
     extraUsage.push(disagreement.usage);
 
-    const isLastAllowedRound = round === MAX_DIAGNOSTIC_ROUNDS - 1;
+    const isLastAllowedRound = round === maxDebateRounds - 1;
     if (state.disagreementScore <= ROUND_CONTINUATION_THRESHOLD || isLastAllowedRound) {
       break;
     }
