@@ -1,0 +1,81 @@
+name: MAST NOHARM Opus55 All001 original rubric judge
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-noharm-opus55-one-judge.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  judge-public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MAST_OPENROUTER_JUDGE_CAP_USD: '0.70'
+      MAST_JUDGE_LEDGER: source-results/judge-cost.jsonl
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve exact recorded Opus 5.5 clinical answer from prior public experiment
+        run: |
+          set -euo pipefail
+          mkdir -p source-results
+          gh run download 41302393853 --repo "${{ github.repository }}" --name doctor-opus-noharm-opus55-known-safety-case --dir source-results
+          python - <<'PY'
+          import json,pathlib
+          a=json.loads(pathlib.Path('source-results/report.json').read_text())
+          assert a['case']=='All001' and a['candidate']=='Claude Opus 5.5 in clinical debate'
+          assert a['clinicalChecks']['avoidsAutomaticNextDose']
+          assert len(a['answer'])>200
+          path=pathlib.Path('source-results/opus55-all001.jsonl')
+          path.write_text(json.dumps({'id':'All001','trial':1,'response':a['answer']})+'\n')
+          print('Frozen public Opus55 answer ready for independent rubric scorer; patient text not logged.')
+          PY
+      - name: Install pinned original MAST judge
+        run: |
+          set -euo pipefail
+          git clone -q https://github.com/ARISENetwork/mast.git mast-reference
+          git -C mast-reference checkout -q 57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          python -m pip install -q -r mast-reference/benchmarks/donoharm/requirements.txt
+          cp benchmark/scripts/noharm-openrouter-judge-transport.py mast-reference/benchmarks/donoharm/judge/gemini_sdk.py
+          mkdir -p mast-reference/results/raw/donoharm/default
+          cp source-results/opus55-all001.jsonl mast-reference/results/raw/donoharm/default/doctor-opus-opus55-onecase-openrouter-judge.jsonl
+      - name: Score exact All001 response with public NOHARM rubric and actual paid judge
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          cat > config/models/doctor-opus-opus55-onecase-openrouter-judge.yaml <<'YAML'
+          model:
+            name: doctor-opus-opus55-onecase-openrouter-judge
+            platform: openrouter
+            model_id: doctor-opus-consilium
+          YAML
+          python score.py --model-config config/models/doctor-opus-opus55-onecase-openrouter-judge.yaml --benchmark-config config/benchmark.yaml --k 1 --cases All001 --threads 1
+      - name: Show source-based F1 and severe-harm columns without exposing case response
+        shell: bash
+        run: |
+          python - <<'PY'
+          import csv,pathlib,json
+          score=pathlib.Path('mast-reference/results/scores/donoharm/default/doctor-opus-opus55-onecase-openrouter-judge.csv')
+          with score.open() as f: rows=list(csv.DictReader(f))
+          if not rows: raise RuntimeError('No NOHARM score produced')
+          print('MAST_NOHARM_OPUS55_JUDGE_SCORE '+json.dumps(rows[0]))
+          PY
+      - name: Save public rubric evaluation and budget
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-opus55-all001-original-rubric-onecase
+          path: |
+            mast-reference/results/scores/donoharm/default/doctor-opus-opus55-onecase-openrouter-judge.csv
+            mast-reference/results/raw/donoharm/default/doctor-opus-opus55-onecase-openrouter-judge_judged.jsonl
+            source-results/judge-cost.jsonl
+          retention-days: 21
+          if-no-files-found: warn
