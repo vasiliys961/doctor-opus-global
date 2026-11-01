@@ -43,9 +43,10 @@ function score(rows:Array<{reference:string;prediction:string}>){
 }
 it('10 actual open ISIC 2016 Task3 CC0 dermoscopy images (5/5), blinded malignancy decision',async()=>{
  const manifest=JSON.parse(readFileSync(SOURCE,'utf8'));
- const cases=manifest.cases as SourceCase[];
- if(cases.length!==10 || cases.filter(x=>x.label==='benign').length!==5 ||
-  cases.filter(x=>x.label==='malignant').length!==5)
+ const allCases=manifest.cases as SourceCase[];
+ const cases=process.env.MAST_ISIC_FORCE_SECOND_READ==='true' ? allCases.filter(item=>item.id==='ISIC_0011125' || item.id==='ISIC_0001119') : allCases;
+ if(allCases.length!==10 || allCases.filter(x=>x.label==='benign').length!==5 ||
+  allCases.filter(x=>x.label==='malignant').length!==5)
    throw Error('Invalid balanced 10-image ISIC official source manifest');
  if(cases.some(x=>!x.licensedViaOfficial2016CC0Dataset))throw Error('ISIC source not verified');
  mkdirSync(OUT,{recursive:true});
@@ -76,7 +77,7 @@ it('10 actual open ISIC 2016 Task3 CC0 dermoscopy images (5/5), blinded malignan
    const study=await analyzeBenchmarkMedicalImage({
     modality:'dermatoscopy',
     images:[{mimeType:'image/jpeg',base64:bytes.toString('base64')}],
-    allowSecondRead:true
+    allowSecondRead:true,forceSecondRead:process.env.MAST_ISIC_FORCE_SECOND_READ==='true'
    });
    // Independent calibrated-looking confidence is merely model self-report;
    // only explicit class is scored. Diagnosis names and reference withheld.
@@ -125,7 +126,7 @@ it('10 actual open ISIC 2016 Task3 CC0 dermoscopy images (5/5), blinded malignan
  }
  const end=getDiagnosticApiUsageSnapshot();
  const summary={
-  planned:10,attempted,missing:10-attempted,
+  planned:cases.length,attempted,missing:cases.length-attempted,
   ...score(scored),
   measuredCostUsd:Number((end.costUsd-started.costUsd).toFixed(5)),
   modelApiFailures:end.failedCalls-started.failedCalls,
@@ -134,6 +135,6 @@ it('10 actual open ISIC 2016 Task3 CC0 dermoscopy images (5/5), blinded malignan
  };
  writeFileSync(OUT+'/summary.json',JSON.stringify(summary,null,2));
  console.log('MAST_ISIC10_SUMMARY '+JSON.stringify(summary));
- expect(attempted).toBe(10);
+ expect(attempted).toBe(cases.length);
  expect(summary.unpricedCalls).toBe(0);
 },1800000);
