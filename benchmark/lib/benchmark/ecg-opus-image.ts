@@ -5,8 +5,10 @@
  */
 import {callDiagnosticAgent} from '../diagnostics/llm-client';
 import {MODELS} from '../openrouter';
+import {formatECGOpusDigitalEvidence} from './ecg-opus-digital-evidence';
+import type {ECGOpusMeasuredSignal} from './ecg-opus-digital-evidence';
 
-export type ECGImageInput={image:{base64:string;mimeType:'image/png'|'image/jpeg'|'image/webp'}};
+export type ECGImageInput={image:{base64:string;mimeType:'image/png'|'image/jpeg'|'image/webp'};digitalMeasurements?:ECGOpusMeasuredSignal};
 export function validateECGImage(input:ECGImageInput):void{
  if(!input?.image||!['image/png','image/jpeg','image/webp'].includes(input.image.mimeType)||
    !/^[A-Za-z0-9+/]+={0,2}$/.test(input.image.base64)||input.image.base64.length>12_000_000)
@@ -15,6 +17,7 @@ export function validateECGImage(input:ECGImageInput):void{
 export async function analyzeECGOpusImage(input:ECGImageInput){
  validateECGImage(input);
  const image={type:'image_url' as const,image_url:{url:'data:'+input.image.mimeType+';base64,'+input.image.base64}};
+ const digitalEvidence=input.digitalMeasurements===undefined?null:formatECGOpusDigitalEvidence(input.digitalMeasurements);
  const first=await callDiagnosticAgent({
   systemPrompt:`You are an expert ECG physician performing only structured independent
  visual extraction of a 12-lead ECG image. Follow a Minnesota-code-inspired
@@ -35,8 +38,11 @@ export async function analyzeECGOpusImage(input:ECGImageInput){
  morphology, most likely electrocardiographic abnormalities, critical
  differentials and recording limitations. Label any unmeasured parameters
  UNKNOWN; never claim ECGFounder/NeuroKit or digital waveform was executed.
- A score from another model is not a diagnostic probability.`,
-  userContent:[{type:'text',text:'Review original ECG image, then critically compare with unverified Gemini observations:\n'+first.content},image],
+ A score from another model is not a diagnostic probability. When separately
+ provided, automated NeuroKit numerical measurements can constrain rate and
+ intervals but never imply verified P waves or a final diagnosis. Treat any
+ disagreement between pixels and measurements as an explicit limitation.`, 
+  userContent:[{type:'text',text:'Review original ECG image, then critically compare with unverified Gemini observations:\n'+first.content+(digitalEvidence?'\nSEPARATE ORIGINAL SIGNAL MEASUREMENT EVIDENCE (NOT A REFERENCE DIAGNOSIS):\n'+digitalEvidence:'\nNo original digital signal measurements were provided.')},image],
   model:MODELS.OPUS,maxTokens:2700,reasoningEffort:'low',
  });
  if(second.error||second.content.trim().length<70)throw Error('ECG Opus image interpretation failed');
@@ -44,6 +50,7 @@ export async function analyzeECGOpusImage(input:ECGImageInput){
   geminiVisualDescription:first.content,report:second.content.trim(),
   models:[MODELS.GEMINI_3_FLASH,MODELS.OPUS],
   digitalECGFounderExecuted:false,
+  originalSignalNeuroKitMeasured:digitalEvidence!==null,
   measurementsAreCalibrated:false,
   costUsd:first.costUsd+second.costUsd};
 }
