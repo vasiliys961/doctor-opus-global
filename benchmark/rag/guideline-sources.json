@@ -10,7 +10,9 @@
       "license": "PUBLIC-DOMAIN",
       "domain": "infectious-disease",
       "published": "2021-07-23",
-      "expectedKeyword": "Sexually Transmitted Infections"
+      "expectedKeyword": "Sexually Transmitted Infections",
+      "enabled": false,
+      "deferredReason": "CDC server responds HTTP 403 to GitHub Actions runner; no attempted bypass or unlicensed mirror"
     },
     {
       "id": "cdc-antibiotics-adults",
@@ -19,7 +21,9 @@
       "publisher": "CDC",
       "license": "PUBLIC-DOMAIN",
       "domain": "antimicrobial-stewardship",
-      "expectedKeyword": "Adult"
+      "expectedKeyword": "Adult",
+      "enabled": false,
+      "deferredReason": "CDC server responds HTTP 403 to GitHub Actions runner; no attempted bypass or unlicensed mirror"
     },
     {
       "id": "cdc-antibiotics-pediatrics",
@@ -28,7 +32,9 @@
       "publisher": "CDC",
       "license": "PUBLIC-DOMAIN",
       "domain": "pediatrics",
-      "expectedKeyword": "Pediatric"
+      "expectedKeyword": "Pediatric",
+      "enabled": false,
+      "deferredReason": "CDC server responds HTTP 403 to GitHub Actions runner; no attempted bypass or unlicensed mirror"
     },
     {
       "id": "nih-hiv-pneumocystis",
@@ -56,6 +62,33 @@
       "license": "PUBLIC-DOMAIN",
       "domain": "guideline-updates",
       "expectedKeyword": "Guidelines"
+    },
+    {
+      "id": "nih-hiv-community-pneumonia",
+      "title": "NIH HIV OI: Community-Acquired Bacterial Pneumonia",
+      "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-opportunistic-infections/community-acquired",
+      "publisher": "NIH ClinicalInfo",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "pulmonology-infectious-disease",
+      "expectedKeyword": "Community-Acquired"
+    },
+    {
+      "id": "nih-hiv-toxoplasmosis",
+      "title": "NIH HIV OI: Toxoplasma Encephalitis",
+      "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-opportunistic-infections/toxoplasmosis",
+      "publisher": "NIH ClinicalInfo",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "neurology-infectious-disease",
+      "expectedKeyword": "Toxoplasmosis"
+    },
+    {
+      "id": "nih-hiv-mac",
+      "title": "NIH HIV OI: Disseminated Mycobacterium avium Complex",
+      "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-opportunistic-infections/disseminated",
+      "publisher": "NIH ClinicalInfo",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "infectious-disease",
+      "expectedKeyword": "Mycobacterium"
     }
   ]
 }
