@@ -53,13 +53,18 @@ export function parseVisionObservation(text:string):Record<string,unknown>|null 
 export function getVisionRoutingDecision(modality:BenchmarkImageModality,data:Record<string,unknown>) {
   const routing=data.routing && typeof data.routing==='object' ? data.routing as Record<string,unknown> : {};
   const study=data.study && typeof data.study==='object' ? data.study as Record<string,unknown> : {};
-  return evaluateComplexVisionRouting(modality,{
+  const criticalFlags=Array.isArray(data.critical_flags)?data.critical_flags:[];
+  const visualDecision = evaluateComplexVisionRouting(modality,{
     self_confidence:typeof routing.self_confidence==='number'?routing.self_confidence:undefined,
     difficulty_level:typeof routing.difficulty_level==='number'?routing.difficulty_level:undefined,
     image_quality:typeof study.image_quality==='string' ? study.image_quality as 'good'|'acceptable'|'moderate'|'poor'|'non_diagnostic' : undefined,
     ambiguous_findings:routing.ambiguous_findings===true,
     needs_second_read:routing.needs_second_read===true
   });
+  if(criticalFlags.length>0){
+    return {escalate:true,reasons:[...visualDecision.reasons,'critical_visual_flag']};
+  }
+  return visualDecision;
 }
 export function validateVisionInput(input:BenchmarkImageInput):void {
   if(!input.images.length||input.images.length>MAX_IMAGES)throw Error('Invalid number of benchmark images');
