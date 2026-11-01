@@ -19,6 +19,7 @@ export interface SafetyAudit {
  response:string;
  costUsd:number;
  sourceLabels:string[];
+ proposedRevision:string;
 }
 const safe=(s:string)=>s.toLowerCase();
 export function detectSafetySignals(caseText:string):SafetySignal[]{
@@ -62,7 +63,7 @@ export async function auditManagementSafety(args:{
  const mode=args.mode||requestedSafetyMode();
  const labels=signals.includes('severe_drug_reaction')?matchOfficialDrugLabel(args.caseText):[];
  const sourceLabels=labels.map(label=>label.drug+':'+label.event+':'+label.severity);
- const base:SafetyAudit={triggered:signals,verdict:'pass',issues:[],rewritten:false,response:args.response,costUsd:0,sourceLabels};
+ const base:SafetyAudit={triggered:signals,verdict:'pass',issues:[],rewritten:false,response:args.response,costUsd:0,sourceLabels,proposedRevision:''};
  if(mode==='off'||signals.length===0)return base;
  const x=await callDiagnosticAgent({
   model:MODELS.SONNET,maxTokens:2200,reasoningEffort:'low',
@@ -93,5 +94,7 @@ export async function auditManagementSafety(args:{
  const rewrite=mode==='enforce' && result.verdict==='revise'&&
     result.issues.length>0&&result.revisedAnswer.trim().length>=180;
  return {triggered:signals,verdict:result.verdict,issues:result.issues,rewritten:rewrite,
-  response:rewrite?result.revisedAnswer.trim():args.response,costUsd:x.costUsd,sourceLabels};
+  response:rewrite?result.revisedAnswer.trim():args.response,costUsd:x.costUsd,sourceLabels,
+  proposedRevision:result.verdict==='revise' && result.revisedAnswer.trim().length>=180
+    ?result.revisedAnswer.trim():''};
 }
