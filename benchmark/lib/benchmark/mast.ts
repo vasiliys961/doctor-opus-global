@@ -2,6 +2,8 @@ import { runConsilium } from '../diagnostics/orchestrator';
 import { callDiagnosticAgent } from '../diagnostics/llm-client';
 import { MODELS } from '../openrouter';
 import type { DiagnosticResult } from '../diagnostics/types';
+import { spawn } from 'node:child_process';
+import { resolve } from 'node:path';
 
 export interface MastResponse { response: string }
 export interface ScriptConcordanceResponse { Rating: number; Rationale: string }
@@ -101,12 +103,31 @@ Put the direct answer to the clinical question in the first sentence (for exampl
  * grader rubric or private test item is ever indexed.
  */
 async function lookupExperimentalRagEvidence(caseText: string): Promise<string> {
-  const path=(process.env.MAST_RAG_INDEX_PATH || '').trim();
-  if(!path) return '';
-  const {medicationEvidence}=await import('../../rag/retrieve.mjs');
-  const result=await medicationEvidence(caseText,path,{limit:4,maxChars:3700});
+  const indexPath=(process.env.MAST_RAG_INDEX_PATH || '').trim();
+  if(!indexPath) return '';
+  // A separate Node subprocess keeps optional @xenova/transformers out of the
+  // isolated Next.js benchmark bundle. No shell and no case text in argv.
+  const result=await new Promise<{ evidence:string; drugs:string[]; hits:Array<{id:string}> }>((ok,fail)=>{
+    const cli=resolve(process.cwd(),'rag','retrieve-cli.mjs');
+    const child=spawn(process.execPath,[cli],{
+      cwd:process.cwd(),env:process.env,stdio:['pipe','pipe','pipe'],
+    });
+    let stdout='',stderr='';
+    const timeout=setTimeout(()=>{child.kill('SIGKILL');fail(Error('RAG query exceeded 40 seconds'))},40000);
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data',(part:string)=>{stdout+=part;if(stdout.length>30000)child.kill('SIGKILL')});
+    child.stderr.on('data',(part:string)=>{stderr+=(part||'').slice(0,1200)});
+    child.on('error',(error)=>{clearTimeout(timeout);fail(error)});
+    child.on('close',(code)=>{
+      clearTimeout(timeout);
+      if(code!==0){fail(Error('RAG lookup failed: '+stderr.slice(0,700)));return}
+      try{ok(JSON.parse(stdout))}catch{fail(Error('RAG lookup returned malformed JSON'))}
+    });
+    child.stdin.end(JSON.stringify({caseText,indexPath}));
+  });
   console.log('MAST_RAG_LOOKUP '+JSON.stringify({
-    enabled:true, matchedDrugs:result.drugs, retrieved:result.retrieved,
+    enabled:true,matchedDrugs:result.drugs,retrieved:!!result.evidence,
     sourceIds:result.hits.map(x=>x.id),
   }));
   return result.evidence;
