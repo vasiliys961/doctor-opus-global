@@ -1,0 +1,72 @@
+name: MAST original NIH XRV CPU inference proof
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - '.github/workflows/mast-original-xrv-cpu-proof.yml'
+      - 'benchmark/scripts/xrv_nih_cpu_worker.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-nih-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      OMP_NUM_THREADS: '1'
+      MKL_NUM_THREADS: '1'
+      CUDA_VISIBLE_DEVICES: ''
+      NIH_SHA256: 31a5475c6b1383a7edbfcaf96af9ce302eb9969cfe28b6b8b5859afc6f274fdf
+      NIH_NAME: nih-densenet121-d121-tw-lr001-rot45-tr15-sc15-seed0-best.pt
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Static Python validation (zero model calls)
+        run: python -m py_compile benchmark/scripts/xrv_nih_cpu_worker.py
+      - name: Install CPU PyTorch and pinned original inference library
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1 torchvision==0.20.1
+          python -m pip install torchxrayvision==1.5.7
+      - name: Download one original NIH model only on GitHub CPU test runner
+        run: |
+          mkdir -p /tmp/nih-xrv
+          curl -fL --retry 2 --connect-timeout 20 \
+            "https://github.com/mlmed/torchxrayvision/releases/download/v1/${NIH_NAME}" \
+            -o "/tmp/nih-xrv/${NIH_NAME}"
+          echo "${NIH_SHA256}  /tmp/nih-xrv/${NIH_NAME}" | sha256sum --check --status
+          echo 'Original NIH weights SHA256 verified (28.4 MB, not bundled in Vercel).'
+      - name: Obtain one public source CXR from the upstream XRV test suite
+        run: |
+          curl -fL --retry 2 --connect-timeout 20 \
+            https://raw.githubusercontent.com/mlmed/torchxrayvision/main/tests/00000001_000.png \
+            -o /tmp/nih-xrv/public-source.png
+          file /tmp/nih-xrv/public-source.png
+      - name: Genuine original DenseNet121 source-image CPU inference
+        run: |
+          python benchmark/scripts/xrv_nih_cpu_worker.py \
+            --weights "/tmp/nih-xrv/${NIH_NAME}" \
+            --oneshot-png /tmp/nih-xrv/public-source.png \
+            | tee /tmp/nih-xrv/source-nih-report.json
+          python - <<'PY'
+          import json
+          d=json.load(open('/tmp/nih-xrv/source-nih-report.json'))
+          assert d['model']=='densenet121-res224-nih'
+          assert d['originalWeightSha256']=='31a5475c6b1383a7edbfcaf96af9ce302eb9969cfe28b6b8b5859afc6f274fdf'
+          assert len(d['scores'])==6
+          assert all(0<=v<=1 for v in d['scores'].values())
+          print('ACTUAL ORIGINAL NIH CPU inference verified, elapsed_ms=',d['cpuElapsedMs'])
+          PY
+      - name: Upload no-PHI inference evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: original-nih-cpu-source-proof
+          path: /tmp/nih-xrv/source-nih-report.json
+          if-no-files-found: ignore
+          retention-days: 7
