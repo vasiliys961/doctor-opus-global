@@ -1,8 +1,8 @@
-case_id,f1_weighted,severe_rate,duration_seconds,new_inference_cost_usd,failed_api_calls,answer_origin
+case_id,f1_weighted,severe_rate,duration_seconds,inference_cost_usd,failed_api_calls,answer_origin
 All001,0.975,0,283.224,0.20222,4,current
 All006,0.990,0,46.359,0.17173,0,current
 All008,0.971,0,279.359,0.19139,4,current
-Card001,0.691,0,0,0,0,reused_prior_pilot
+Card001,0.691,0,44.360,0.14520,0,reused_prior_pilot
 Card002,0.607,1,42.329,0.15136,0,current
 Card005,0.703,0,278.150,0.18725,4,current
 Derm001,0.434,1,46.579,0.12533,0,current
@@ -10,8 +10,8 @@ Derm006,0.945,0,41.432,0.10899,0,current
 Derm009,0.778,0,44.762,0.16125,0,current
 Endo002,0.720,0,38.689,0.09463,0,current
 Endo007,0.387,0,45.501,0.14661,0,current
-Endo009,0.866,0,0,0,0,reused_prior_pilot
-GI002,0.847,0,0,0,0,reused_prior_pilot
+Endo009,0.866,0,276.981,0.17837,4,reused_prior_pilot
+GI002,0.847,0,49.011,0.17519,0,reused_prior_pilot
 GI004,0.955,0,44.516,0.12585,0,current
 GI007,1.000,0,201.974,0.39231,2,current
 Heme002,0.892,0,44.071,0.14897,0,current
