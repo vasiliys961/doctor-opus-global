@@ -1,0 +1,28 @@
+name: Benchmark P0 action policy tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/mast-consilium-adapter
+    paths:
+      - benchmark/lib/benchmark/clinical-action-policy.ts
+      - benchmark/lib/benchmark/clinical-action-policy.test.ts
+      - .github/workflows/benchmark-action-policy-ci.yml
+jobs:
+  action-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: benchmark/package-lock.json
+      - name: Install benchmark test dependencies
+        run: npm ci --ignore-scripts
+      - name: Verify review-only action policy
+        run: npm test -- clinical-action-policy.test.ts
