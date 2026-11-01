@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Confirm NIH reference gating and license policies
+        run: node --test benchmark/rag/guidelines-lookup.test.mjs
       - name: Retrieve actual NIH text embeddings, not any MAST answers
         env:
           GH_TOKEN: ${{ github.token }}
