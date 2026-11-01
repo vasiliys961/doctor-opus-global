@@ -1,0 +1,45 @@
+name: MAST contest ECG Opus original digital NeuroKit three-case verification
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - '.github/workflows/mast-ecg-opus-digital-measurements.yml'
+      - 'benchmark/scripts/measure_ecg_opus_original_three.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  neurokit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: vasiliys961/ecg-opus-global
+          ref: b0d1c3b5745dd348aa81670452aac0d6a7150fd8
+          path: ecg-opus-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install original ECG Opus tracing measurement requirements
+        run: python -m pip install -q numpy scipy pandas neurokit2
+      - name: Real signal interval and rate extraction, 3 original ECG Opus examples
+        env:
+          PYTHONPATH: ecg-opus-source
+        run: python benchmark/scripts/measure_ecg_opus_original_three.py ecg-opus-source/examples2 benchmark/internal-results/ecg-opus-digital-three
+      - name: Preserve numerical measurements only (no raw signals)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mast-ecg-opus-digital-measured-three
+          path: benchmark/internal-results/ecg-opus-digital-three/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Remove public source recordings from ephemeral worker
+        if: always()
+        run: rm -rf ecg-opus-source
