@@ -20,6 +20,8 @@ audit = json.loads(audit_files[0].read_text())
 judge = []
 for p in ledger_files:
     judge.extend(json.loads(x) for x in p.read_text().splitlines() if x.strip())
+if not judge:
+    raise RuntimeError('No measured judge ledger: do not report a false zero-dollar cost')
 judge_cost = sum(float(x['costUsd']) for x in judge)
 original_f1 = 0.9697  # previous one-case public judge run 41302687551
 report = {
