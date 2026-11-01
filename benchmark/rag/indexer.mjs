@@ -124,6 +124,8 @@ export async function buildIndex({inputPath, outputPath, dryRun=false, batchSize
     const {pipeline, env}=await import('@xenova/transformers');
     env.allowRemoteModels=true;
     env.allowLocalModels=true;
+    // Persist model weights between GitHub jobs with actions/cache; public corpus only.
+    env.cacheDir=process.env.DOCTOR_OPUS_RAG_CACHE_DIR || 'benchmark/rag/.cache';
     const extractor=await pipeline('feature-extraction',MODEL_ID,{quantized:true});
     for (let start=0;start<missing.length;start+=batchSize) {
       const batch=missing.slice(start,start+batchSize);
