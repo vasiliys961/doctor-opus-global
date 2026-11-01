@@ -53,7 +53,7 @@ jobs:
       - name: Cache open-source embedding model
         uses: actions/cache@v4
         with:
-          path: ~/.cache/huggingface
+          path: benchmark/rag/.cache
           key: benchmark-e5-small-v1
       - name: Install optional headless embedding runtime
         run: npm install --prefix benchmark/rag --no-audit --no-fund
