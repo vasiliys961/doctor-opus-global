@@ -14,7 +14,7 @@ const TASKS=[
  {id:'urinary_retention_workup',domain:'urology',expected:['hematuria','catheter','renal','urine','follow']},
  {id:'aortic_aneurysm_cad',domain:'cardiology',expected:['aort','coronary','echo','calcium','medication']}
 ] as const;
-const OUT='internal-results/physicianbench-public-two-consilium';
+const OUT='internal-results/physicianbench-style-open-two/physicianbench-public-two-consilium';
 const MAX_COST_USD=3.0;
 
 it('whole Doctor Opus handles two new official public PhysicianBench tasks with missing FHIR',async()=>{
