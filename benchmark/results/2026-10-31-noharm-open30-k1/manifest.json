@@ -1,64 +1,41 @@
 {
-  "schema_version": 1,
-  "artifact_type": "internal_open_benchmark_result",
-  "created_utc": "2026-11-01",
   "benchmark": "MAST First Do NOHARM v2",
-  "cohort": "30 open baseline cases",
+  "scope": "30 public baseline cases only",
   "k": 1,
-  "trials": 1,
-  "patient_data": false,
-  "system": "Doctor Opus Global - full multiagent consilium",
-  "inference_branch": "feat/mast-consilium-adapter",
-  "inference_commit": "cf6065ca9b9a2f6d84d396fc027eb1f464b6fbed",
-  "mAST_data_commit": "57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee",
-  "inference_github_run": "https://github.com/vasiliys961/doctor-opus-global/actions/runs/41237938481",
-  "evaluation_github_run": "https://github.com/vasiliys961/doctor-opus-global/actions/runs/41241683221",
-  "prior_three_case_github_run": "https://github.com/vasiliys961/doctor-opus-global/actions/runs/41233224457",
-  "judge": "Original NOHARM two-stage match/review prompts and scoring algorithm, OpenRouter Gemini transport; NOT canonical Google SDK",
-  "judge_models": [
-    "google/gemini-3-flash-preview",
-    "google/gemini-3.5-flash"
-  ],
-  "sample_count": 30,
-  "completed": 30,
-  "new_generated": 27,
-  "prior_reused": 3,
-  "metrics": {
-    "F1_weighted": 0.8555,
-    "F1_weighted_CI95": [
-      0.8136,
-      0.894
-    ],
-    "Severe_rate": 0.0667,
-    "Precision_weighted": 0.8865,
-    "Recall_weighted": 0.862
+  "clinical_system": "Doctor Opus full multiagent consilium",
+  "frozen_inference_sha": "cf6065ca9b9a2f6d84d396fc027eb1f464b6fbed",
+  "benchmark_dataset_sha": "57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee",
+  "inference_run_url": "https://github.com/vasiliys961/doctor-opus-global/actions/runs/41237938481",
+  "judge_run_url": "https://github.com/vasiliys961/doctor-opus-global/actions/runs/41241683221",
+  "judge": "MAST original match/review prompts and score.py; Gemini via OpenRouter, NOT direct Google SDK",
+  "evaluation_not_official_or_leaderboard_comparable": true,
+  "uses_patient_data": false,
+  "baseline_summary": {
+    "benchmark": "First Do NOHARM open 30 baseline cases, k=1",
+    "system": "Doctor Opus Consilium full multiagent pathway",
+    "sourceCommit": "57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee",
+    "planned": 30,
+    "completed": 30,
+    "reused": 3,
+    "failed": 0,
+    "generatedNow": 27,
+    "incrementalBilledUsd": 4.76143,
+    "pricedCalls": 217,
+    "unpricedCalls": 0,
+    "apiFailures": 26,
+    "elapsedSeconds": 2867.371,
+    "stoppedReason": null,
+    "officialScoreReady": true,
+    "caveat": "No score until the official two-stage Gemini judge processes complete outputs. A 30-case k=1 score is not the MAST k=11 330-variant leaderboard score."
   },
-  "billing_usd": {
-    "generation_new_27": 4.76143,
-    "generation_reused_pilot_3": 0.49876,
-    "judge_30": 1.057948,
-    "approx_total": 6.318138
+  "record_hashes_sha256": {
+    "original-responses.jsonl": "c7aee7b2fc21f0b6b59bce56a9cfc65f768ebee8e9c0adfd99113434b903a898",
+    "inference-ledger.jsonl": "ae4d681e362d0c191caebfa0cab88294329ff647e22675b907e3eda46fe56198",
+    "inference-summary.json": "ab0a0d244c46e0175425de37bbf47ad755bca4bf9f5238267cb6c0c409edd102",
+    "official-rubric-alternate-transport-judged.jsonl": "dcf361830f34540d4c18c661ea742b0a544dc43168a9dcf792065ec51e6f6e44",
+    "original-mast-score.csv": "24fcc8fd165ac5fee2d5e65f160fa0f377685333ace9a627139e8879e3f9c79d",
+    "clinical-audit-original.md": "b571244c45b266052d7b5c94bd1adc4bd7d59f8bb3e540c1be0fd56dbb7841f8"
   },
-  "inference_api": {
-    "priced_calls_new": 217,
-    "failed_calls_new": 26,
-    "unpriced_calls_new": 0,
-    "elapsed_seconds_new": 2867.371
-  },
-  "data_and_scores_comparable_to_official_leaderboard": false,
-  "cannot_infer": [
-    "MAST product leaderboard rank",
-    "superiority over LiSA, Doximity or OpenEvidence",
-    "behavior on k=11 perturbation set",
-    "performance on official private holdout"
-  ],
-  "license": "MAST open NOHARM cases/rubrics CC-BY-4.0; original responses remain in temporary GitHub Actions artifacts",
-  "original_files_sha256": {
-    "metrics_csv": "24fcc8fd165ac5fee2d5e65f160fa0f377685333ace9a627139e8879e3f9c79d",
-    "judged_jsonl": "dcf361830f34540d4c18c661ea742b0a544dc43168a9dcf792065ec51e6f6e44",
-    "answers_jsonl": "c7aee7b2fc21f0b6b59bce56a9cfc65f768ebee8e9c0adfd99113434b903a898",
-    "generated_inference_summary_json": "ab0a0d244c46e0175425de37bbf47ad755bca4bf9f5238267cb6c0c409edd102",
-    "error_audit_md": "b571244c45b266052d7b5c94bd1adc4bd7d59f8bb3e540c1be0fd56dbb7841f8"
-  },
-  "note": "This repository snapshot intentionally contains summary and per-case scores only. MAST private leaderboard custom API evaluation requires zero retention of private prompts and outputs, according to official submission agreement."
+  "previous_pilot_cost_usd": 0.49876,
+  "judge_cost_usd": 1.057948
 }

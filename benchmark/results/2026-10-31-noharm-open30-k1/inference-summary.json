@@ -1,0 +1,18 @@
+{
+  "benchmark": "First Do NOHARM open 30 baseline cases, k=1",
+  "system": "Doctor Opus Consilium full multiagent pathway",
+  "sourceCommit": "57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee",
+  "planned": 30,
+  "completed": 30,
+  "reused": 3,
+  "failed": 0,
+  "generatedNow": 27,
+  "incrementalBilledUsd": 4.76143,
+  "pricedCalls": 217,
+  "unpricedCalls": 0,
+  "apiFailures": 26,
+  "elapsedSeconds": 2867.371,
+  "stoppedReason": null,
+  "officialScoreReady": true,
+  "caveat": "No score until the official two-stage Gemini judge processes complete outputs. A 30-case k=1 score is not the MAST k=11 330-variant leaderboard score."
+}
