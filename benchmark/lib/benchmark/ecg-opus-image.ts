@@ -41,7 +41,24 @@ export async function analyzeECGOpusImage(input:ECGImageInput){
  A score from another model is not a diagnostic probability. When separately
  provided, automated NeuroKit numerical measurements can constrain rate and
  intervals but never imply verified P waves or a final diagnosis. Treat any
- disagreement between pixels and measurements as an explicit limitation.`, 
+ disagreement between pixels and measurements as an explicit limitation.
+ Evaluate ventricular regularity from visible sequential beats, not rate alone.
+ About 150/min is NOT proof of flutter with 2:1 conduction: explicitly compare
+ atrial fibrillation, flutter with variable/fixed block, atrial tachycardia,
+ sinus tachycardia and SVT using P/flutter waves and genuine RR variability.
+ If no clear organized P waves, do not trust auto-PQ as a PR. Use RR max/min
+ only as a variability flag requiring source beat review: it may be an outlier.
+ When broad anterior T waves or ST deviation could represent an early coronary
+ occlusion, do not label them benign early repolarization as the most likely
+ cause solely because symptoms, age and prior ECG are missing. Clearly state
+ what is known, what is not known and which clinical context is necessary
+ to exclude an urgent ischemic diagnosis.
+ Do not recommend adenosine/vagal maneuvers routinely when rhythm mechanism
+ or regularity is unknown; interventions need appropriate monitoring,
+ clinician assessment and the correct indication.
+ Preserve ranked diagnostic hypotheses with clinical reasoning, and give a
+ single MOST LIKELY WORKING RHYTHM only when justified by visible evidence.
+ Never claim confirmed myocardial infarction from an isolated research ECG.`, 
   userContent:[{type:'text',text:'Review original ECG image, then critically compare with unverified Gemini observations:\n'+first.content+(digitalEvidence?'\nSEPARATE ORIGINAL SIGNAL MEASUREMENT EVIDENCE (NOT A REFERENCE DIAGNOSIS):\n'+digitalEvidence:'\nNo original digital signal measurements were provided.')},image],
   model:MODELS.OPUS,maxTokens:2700,reasoningEffort:'low',
  });
