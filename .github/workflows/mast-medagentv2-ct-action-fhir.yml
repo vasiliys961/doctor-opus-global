@@ -1,0 +1,62 @@
+name: MAST v2 CT follow-up FHIR ordering with author's grader
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-medagentv2-ct-action-fhir.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  advanced-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ericoericochen/medagentbenchv2
+          ref: 46c93f39bd8679af35790eaaa5dd41bc067024a0
+          path: medagentbench-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Launch source authors' isolated FHIR hospital
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker pull jyxsu6/medagentbench:latest
+          docker run -d --name mast-medagentv2-ct --platform linux/amd64 \
+            -e JAVA_TOOL_OPTIONS='-XX:+UseSerialGC -Xms256m -Xmx1024m' -p 8080:8080 jyxsu6/medagentbench:latest
+          for i in $(seq 1 100); do
+            if curl -fsS --max-time 3 http://127.0.0.1:8080/fhir/metadata >/dev/null; then echo 'FHIR ready'; exit 0; fi
+            sleep 3
+          done
+          echo 'FHIR unavailable'; docker logs --tail 30 mast-medagentv2-ct; exit 1
+      - name: Install test dependencies
+        working-directory: benchmark
+        run: npm install --no-audit --no-fund
+      - name: Two real multi-step CT followup actions in temporary FHIR EHR
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        working-directory: benchmark
+        run: npx vitest --config vitest.medagentv2-ct.config.ts run lib/benchmark/medagentbench-v2-ct-order.live.test.ts --testTimeout=900000
+      - name: Evaluate using unmodified author's Python grader
+        run: |
+          python -m pip install --quiet requests
+          python benchmark/scripts/score-medagentv2-ct.py
+      - name: Archive task output, scores, cost; no medical pixel files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-medagentv2-ct-orders-official-two
+          path: benchmark/internal-results/medagentv2-ct-orders/
+          retention-days: 21
+          if-no-files-found: warn
+      - name: Remove temporary EHR
+        if: always()
+        run: docker rm -f mast-medagentv2-ct || true
