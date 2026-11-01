@@ -17,6 +17,7 @@ export type BenchmarkImageInput = {
   images: Array<{ base64: string; mimeType: 'image/png' | 'image/jpeg' | 'image/webp' }>;
   allowSecondRead?: boolean;
   forceSecondRead?: boolean; // research A/B only; baseline stays conditional
+  examRegion?: 'thyroid' | 'heart' | 'abdomen' | 'pelvis' | 'vascular' | 'musculoskeletal'; // exam metadata, not a diagnosis
 };
 export type BenchmarkVisionOutput = {
   modality: BenchmarkImageModality;
@@ -69,6 +70,8 @@ export function getVisionRoutingDecision(modality:BenchmarkImageModality,data:Re
 }
 export function validateVisionInput(input:BenchmarkImageInput):void {
   if(!input.images.length||input.images.length>MAX_IMAGES)throw Error('Invalid number of benchmark images');
+  if(input.examRegion!==undefined && !['thyroid','heart','abdomen','pelvis','vascular','musculoskeletal'].includes(input.examRegion))
+    throw Error('Unsupported anatomical examination region');
   for(const img of input.images){
     // Reject remote references. A source image is supplied as inline pixels only.
     if(!/^[A-Za-z0-9+/]+={0,2}$/.test(img.base64) || img.base64.length>MAX_BASE64_CHARS)
@@ -86,9 +89,14 @@ export async function analyzeBenchmarkMedicalImage(input:BenchmarkImageInput):Pr
   const modality=input.modality as ImageType;
   const pixels=input.images.map(image=>({type:'image_url' as const,image_url:{url:'data:'+image.mimeType+';base64,'+image.base64}}));
   const prompt=getDescriptionPrompt(modality,specialties[input.modality]);
+  // An organ/region is routinely known from the imaging order. It is not a
+  // source diagnosis or reference label, and must never name the lesion.
+  const examContext=input.examRegion
+    ? 'Known examination region from study metadata: '+input.examRegion+'. This identifies anatomy only, NOT pathology; verify actual visual findings and state uncertainty.'
+    : 'Examination region is not supplied. Determine anatomy only from pixels and state uncertainty.';
   const first=await callDiagnosticAgent({
     systemPrompt:prompt,
-    userContent:[{type:'text',text:'Observe the original image pixels independently. Do not diagnose.'},...pixels],
+    userContent:[{type:'text',text:examContext+' Observe the original image pixels independently. Do not diagnose.'},...pixels],
     model:MODELS.GEMINI_3_FLASH,maxTokens:3500,reasoningEffort:'low'
   });
   const firstJson=first.error?null:parseVisionObservation(first.content);
@@ -102,7 +110,7 @@ export async function analyzeBenchmarkMedicalImage(input:BenchmarkImageInput):Pr
   if((routing.escalate || input.forceSecondRead===true) && input.allowSecondRead!==false) {
     const second=await callDiagnosticAgent({
       systemPrompt:prompt,
-      userContent:[{type:'text',text:'Provide an INDEPENDENT second read from the original image(s); describe only findings.'},...pixels],
+      userContent:[{type:'text',text:examContext+' Provide an INDEPENDENT second read from the original image(s); describe only findings.'},...pixels],
       model:MODELS.GEMINI_3_PRO,maxTokens:3500,reasoningEffort:'low'
     });
     cost+=second.costUsd;
@@ -115,7 +123,7 @@ export async function analyzeBenchmarkMedicalImage(input:BenchmarkImageInput):Pr
   // avoid the observer instructing or biasing the second model's diagnosis.
   const reportCall=await callDiagnosticAgent({
     systemPrompt:buildReportInstruction(input.modality),
-    userContent:'STRUCTURED IMAGE FINDINGS (not verified diagnoses):\n'+JSON.stringify({
+    userContent:examContext+'\nSTRUCTURED IMAGE FINDINGS (not verified diagnoses):\n'+JSON.stringify({
       primaryObservation:firstJson ? prepareVisionDataForTextPrompt(firstJson) : null,
       independentSecondObservation:secondObservation ? prepareVisionDataForTextPrompt(secondObservation) : null,
       selectedObservation:prepareVisionDataForTextPrompt(observation)
