@@ -48,6 +48,18 @@ function bounded(text: string, max = 4500): string {
   return text.slice(0, max);
 }
 
+/**
+ * A differential diagnosis and calibrated uncertainty are intentional in Doctor
+ * Opus, not a benchmark failure. When the task explicitly asks for a single
+ * leading diagnosis, present ONE most likely working diagnosis for scoring,
+ * then preserve alternatives and uncertainty. No forced certainty.
+ */
+export function getMastDiagnosticOutputPolicy(caseText: string):string {
+  if (/\b(?:single[- ]best diagnosis|leading diagnosis|most likely diagnosis|primary diagnosis|top diagnosis)\b/i.test(caseText))
+    return 'Give exactly one leading working diagnosis when asked, with reasoning, important differential diagnoses, and clear uncertainty. Do not turn a hypothesis into a confirmed diagnosis.';
+  return 'Keep the clinical differential and uncertainty; if a leading diagnosis is clinically justified, identify it as the most likely working diagnosis rather than an established fact. Answer the specific management question first.';
+}
+
 /** Assemble the original consilium evidence instead of trusting a diagnosis-only summary. */
 export function buildMastManagementContext(caseText: string, result: DiagnosticResult): string {
   const audit = result.auditTrail;
@@ -58,7 +70,8 @@ export function buildMastManagementContext(caseText: string, result: DiagnosticR
     .map(o => `${o.role}: ${bounded(o.content, 2800)}`).join('\n\n');
   return [
     'ORIGINAL CLINICAL TASK:', bounded(caseText, 16000),
-    'FINAL DIAGNOSIS:', result.finalDiagnosis.diagnosis,
+    'DIAGNOSTIC OUTPUT POLICY:', getMastDiagnosticOutputPolicy(caseText),
+    'LEADING WORKING DIAGNOSIS (provisional, not automatically established):', result.finalDiagnosis.diagnosis,
     'DIAGNOSTIC RATIONALE:', bounded(result.finalDiagnosis.reasoning, 4000),
     'INDEPENDENT SPECIALISTS:', bounded(opinions, 10000),
     'CONSENSUS SYNTHESIS:', bounded(audit.amscRound?.synthesisContent || '', 5000),
@@ -74,7 +87,7 @@ export const MAST_MANAGEMENT_PROMPT = `You are the final attending physician syn
 Respond to the ORIGINAL CLINICAL TASK, not merely to the diagnostic label.
 Provide a clinically actionable, safe management plan in English. Target 350-450 words, maximum 500 where possible; clinical correctness and essential safety actions take priority over word count. Avoid repetitive explanations and long differential lists.
 Use these sections:
-1. Clinical assessment: principal diagnosis, material differentials and relevant uncertainty.
+1. Clinical assessment: the most likely WORKING diagnosis (not automatically a confirmed diagnosis), material differentials and relevant uncertainty. If the original task explicitly requests one leading diagnosis, name a single leading candidate and preserve reasoning and alternatives.
 2. Immediate actions / triage: urgency, stabilization and admission or escalation where indicated.
 3. Diagnostic evaluation: prioritized tests only if they change management.
 4. Treatment and management: specific therapies and, when clinically justified and supported by the case, adult doses/routes/duration; account for contraindications, renal function, pregnancy, allergies and interactions when data are supplied. Never invent missing patient characteristics; explicitly qualify dose-dependent recommendations when essential data are absent.
