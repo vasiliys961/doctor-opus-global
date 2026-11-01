@@ -1,0 +1,25 @@
+name: MAST CPCBench public release local import privacy and format smoke
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-cpcbench-public-import-preflight.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test public CPC-Bench ZIP import with synthetic placeholders only
+        working-directory: benchmark/scripts
+        run: python -m unittest -v test_inspect_cpcbench_archive
+      - name: Confirm no restricted dataset or paid model was required
+        run: echo 'CPC local import is ready for a separately authorized user-downloaded dataset. No clinical contents are committed.'
