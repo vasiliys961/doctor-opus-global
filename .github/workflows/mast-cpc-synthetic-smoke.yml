@@ -1,0 +1,41 @@
+name: Doctor Opus CPC-like synthetic two-case cost-guarded smoke
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-cpc-synthetic-smoke.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  two-synthetic-cases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/checkout@v4
+        with:
+          repository: microsoft/sdbench
+          path: sdbench-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install separate contest benchmark dependencies
+        run: npm install --no-audit --no-fund
+        working-directory: benchmark
+      - name: Full Doctor Opus on two OPEN synthetic CPC-like cases (NOT official CPC)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.cpc.synthetic.smoke.live.test.ts --testTimeout=1800000
+        working-directory: benchmark
+      - name: Save outputs and tracked costs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-cpc-synthetic-two-open-cases
+          path: benchmark/internal-results/cpc-synthetic-smoke/
+          retention-days: 21
+          if-no-files-found: warn
