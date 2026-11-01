@@ -32,7 +32,7 @@ export function extractSections(drug,rec,apiUrl) {
   for(const section of SECTIONS){
     const arr=rec[section];
     if(!Array.isArray(arr)||!arr.length)continue;
-    const text=arr.filter(x=>typeof x==='string').join(' ').replace(/\\s+/g,' ').trim().slice(0,10500);
+    const text=arr.filter(x=>typeof x==='string').join(' ').replace(/\s+/g,' ').trim().slice(0,10500);
     if(text.length<100)continue;
     output.push({...shared,id:'openfda-'+drug+'-'+section,section:section.replaceAll('_',' '),text});
   }
@@ -40,7 +40,7 @@ export function extractSections(drug,rec,apiUrl) {
 }
 export async function fetchDrug(drug,{fetchImpl=fetch}={}) {
   if(!allowed.has(drug)) throw new Error('Unknown drug '+drug);
-  const q='openfda.generic_name:'+drug+'+AND+_exists_:contraindications';
+  const q='openfda.generic_name:'+drug+' AND _exists_:contraindications';
   const u=API+'?search='+encodeURIComponent(q)+'&limit=10';
   let lastError;
   for(let attempt=0;attempt<3;attempt++){
