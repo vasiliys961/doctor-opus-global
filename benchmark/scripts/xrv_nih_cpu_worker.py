@@ -115,6 +115,11 @@ def guarded_infer(png: bytes) -> dict:
         process.join(timeout=1)
         receiver.close()
 
+class BoundedCpuServer(HTTPServer):
+    # A single warm CPU model serves one request at a time, but the socket
+    # backlog must hold the 5-10 simultaneous MAST candidates safely.
+    request_queue_size = 16
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_args):
         # Never log source identifiers, bearer tokens or image contents.
@@ -190,7 +195,7 @@ def main() -> int:
         return 0
     if not os.environ.get("XRV_WORKER_TOKEN") or len(os.environ["XRV_WORKER_TOKEN"]) < 24:
         raise RuntimeError("Set a sufficiently long XRV_WORKER_TOKEN")
-    with HTTPServer((args.host, args.port), Handler) as server:
+    with BoundedCpuServer((args.host, args.port), Handler) as server:
         server.serve_forever()
     return 0
 
