@@ -53,6 +53,9 @@ export function chunkDocument(doc, maxChars=1100, overlapWords=22) {
       sourceUrl: doc.url || null,
       page: Number.isInteger(doc.page) ? doc.page : null,
       section: doc.section || null,
+      effectiveDate: doc.effectiveDate || null,
+      sourceSetId: doc.sourceSetId || null,
+      retrievedFrom: doc.retrievedFrom || null,
       text,
       contentSha256: sha256(text),
     });
