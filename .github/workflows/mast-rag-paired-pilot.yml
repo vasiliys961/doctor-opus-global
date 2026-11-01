@@ -1,0 +1,147 @@
+name: Doctor Opus paired full-consilium FDA-RAG clinical pilot
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/mast-rag-paired-pilot.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  paired-inference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: benchmark
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+      RAG_INDEX_PATH: rag-index-openfda/index.jsonl
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restore exact FDA evidence vectors (no benchmark rubrics)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 41277447526 --repo "${{ github.repository }}" --name doctor-opus-rag-openfda-public-safety-index --dir .
+          test -s rag-index-openfda/index.jsonl
+      - name: Restore cached E5 model
+        uses: actions/cache@v4
+        with:
+          path: benchmark/rag/.cache
+          key: benchmark-e5-small-v1
+      - name: Install benchmark and optional CPU E5 runtime
+        run: |
+          npm install --no-audit --no-fund
+          npm install --prefix rag --no-audit --no-fund
+      - name: Run paired complete Doctor Opus with/without licensed FDA RAG (capped)
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.rag.paired.live.test.ts --testTimeout=5400000
+      - name: Save blinded response arms and pre-registered IDs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-full-consilium-fda-rag-paired-pilot
+          path: benchmark/internal-results/noharm-rag-paired/
+          retention-days: 21
+          if-no-files-found: warn
+  pair-judge:
+    needs: paired-inference
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MAST_OPENROUTER_JUDGE_CAP_USD: '1.5'
+      MAST_JUDGE_LEDGER: ${{ github.workspace }}/source-results/judge-cost.jsonl
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve both previously-generated response arms, verify all pairs
+        run: |
+          mkdir -p source-results
+          gh run download "${{ github.run_id }}" --repo "${{ github.repository }}" --name doctor-opus-full-consilium-fda-rag-paired-pilot --dir source-results
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('source-results')
+          s=json.loads((p/'summary.json').read_text())
+          c=[json.loads(x) for x in (p/'answers-control.jsonl').read_text().splitlines() if x.strip()]
+          r=[json.loads(x) for x in (p/'answers-rag.jsonl').read_text().splitlines() if x.strip()]
+          assert s['successfulPairs']==4 and len(c)==len(r)==4
+          assert {x['id'] for x in c}=={x['id'] for x in r}
+          print('Four predeclared public clinical pairs ready for blind identical scoring')
+          PY
+      - name: Prepare original, pinned MAST scorer and alternate Gemini transport
+        run: |
+          git clone -q https://github.com/ARISENetwork/mast.git mast-reference
+          git -C mast-reference checkout -q 57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          pip install -q -r mast-reference/benchmarks/donoharm/requirements.txt
+          cp benchmark/scripts/noharm-openrouter-judge-transport.py mast-reference/benchmarks/donoharm/judge/gemini_sdk.py
+          mkdir -p mast-reference/results/raw/donoharm/default
+          cp source-results/answers-control.jsonl mast-reference/results/raw/donoharm/default/doctor-opus-v2-control.jsonl
+          cp source-results/answers-rag.jsonl mast-reference/results/raw/donoharm/default/doctor-opus-v2-fda-rag.jsonl
+      - name: Score both system configurations with identical MAST rubric judge
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          for arm in control fda-rag; do
+            cat > "config/models/doctor-opus-v2-${arm}.yaml" <<YAML
+          model:
+            name: doctor-opus-v2-${arm}
+            platform: openrouter
+            model_id: doctor-opus-consilium
+          YAML
+          done
+          CASES=$(python -c "import json; print(','.join(x['id'] for x in json.load(open('../../../source-results/preregistration.json'))['cases']))")
+          python score.py --model-config config/models/doctor-opus-v2-control.yaml --benchmark-config config/benchmark.yaml --k 1 --cases "$CASES" --threads 1
+          python score.py --model-config config/models/doctor-opus-v2-fda-rag.yaml --benchmark-config config/benchmark.yaml --k 1 --cases "$CASES" --threads 1
+      - name: Compare measured effect per identical clinical case
+        run: |
+          python - <<'PY'
+          import csv,json,pathlib
+          root=pathlib.Path('mast-reference/results')
+          arms={}
+          for arm in ['control','fda-rag']:
+            name='doctor-opus-v2-'+arm
+            p=root/'raw'/'donoharm'/'default'/(name+'_judged.jsonl')
+            rows=[json.loads(x) for x in p.read_text().splitlines() if x.strip()]
+            arms[arm]={x['id']:x['metrics'] for x in rows}
+          assert len(arms['control'])==len(arms['fda-rag'])==4
+          ids=sorted(set(arms['control'])&set(arms['fda-rag']))
+          records=[]
+          for cid in ids:
+            a=arms['control'][cid];b=arms['fda-rag'][cid]
+            records.append({'id':cid,'controlF1':a['F1_weighted'],'ragF1':b['F1_weighted'],
+              'deltaF1':b['F1_weighted']-a['F1_weighted'],
+              'controlSevere':a['Severe_rate'],'ragSevere':b['Severe_rate']})
+          stats={'cases':len(ids),'meanControlF1':sum(x['controlF1'] for x in records)/len(ids),
+            'meanRagF1':sum(x['ragF1'] for x in records)/len(ids),
+            'deltaF1Mean':sum(x['deltaF1'] for x in records)/len(ids),
+            'controlSevere':sum(x['controlSevere'] for x in records),
+            'ragSevere':sum(x['ragSevere'] for x in records),
+            'notComparableToMASTLeaderboard':True,
+            'note':'N=4 non-independent public perturbation families; internal OpenRouter transport judge; low statistical power'}
+          out=pathlib.Path('source-results/pair-judged-summary.json')
+          out.write_text(json.dumps({'stats':stats,'caseResults':records},indent=2)+'\n')
+          print('MAST_RAG_PAIRED_JUDGE_SUMMARY '+json.dumps(stats))
+          for x in records: print('MAST_RAG_PAIRED_ITEM '+json.dumps(x))
+          PY
+      - name: Upload complete paired judge output and measured billing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-full-consilium-fda-rag-paired-scored
+          path: |
+            source-results/
+            mast-reference/results/scores/donoharm/default/doctor-opus-v2-*.csv
+            mast-reference/results/raw/donoharm/default/doctor-opus-v2-*_judged.jsonl
+          retention-days: 21
+          if-no-files-found: warn
