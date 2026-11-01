@@ -27,6 +27,15 @@ def main(src,out):
   if signals.shape!=(5000,12) or not np.isfinite(signals).all():
    raise RuntimeError("Signal invalid, cannot claim numerical measurements")
   report=measure_tracing(signals.T,500.0)
+  if report.get("available") is not True:
+   # The upstream ECG Opus helper intentionally suppresses exceptions.
+   # For these public contest fixtures, surface only the exception type for
+   # debugging; never silently claim 3/3 quantitative measurements.
+   import ecg_engine.delineation as outline
+   try:
+    outline._measure(signals.T,500.0)
+   except Exception as exc:
+    print("ECG_OPUS_MEASUREMENT_EXCEPTION",case,type(exc).__name__,str(exc)[:180])
   row={ "case":case,"reference":reference,"method":"ECG Opus NeuroKit measured original digital signal",
    "available":report.get("available") is True,"beats":report.get("beats"),
    "heart_rate_bpm":report.get("heart_rate_bpm"),"rr_ms":report.get("rr_ms"),
@@ -42,5 +51,7 @@ def main(src,out):
   "cases":records,"total":len(records),"measured":sum(x["available"] for x in records),
   "notes":"Quantitative NeuroKit delineation, no ML weight inference; no diagnosis accuracy claimed"
  },ensure_ascii=False,indent=2))
+ if not any(row["available"] for row in records):
+  raise RuntimeError("No measurable ECG signals; test must fail until digital extraction works")
 if __name__=="__main__":
  main(Path(sys.argv[1]),Path(sys.argv[2]))
