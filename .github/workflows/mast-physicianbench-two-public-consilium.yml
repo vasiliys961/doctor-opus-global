@@ -1,0 +1,40 @@
+name: MAST PhysicianBench two genuine public tasks full consilium preflight
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - '.github/workflows/mast-physicianbench-two-public-consilium.yml'
+      - 'benchmark/lib/benchmark/physicianbench-two-public-consilium.live.test.ts'
+      - 'benchmark/vitest.physicianbench-two-public.config.ts'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-physicianbench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Full Doctor Opus consilium on two pinned official public tasks
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.physicianbench-two-public.config.ts run --testTimeout=1200000
+      - name: Preserve nonpatient public source task outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: physicianbench-two-public-instructions-full-consilium
+          path: benchmark/internal-results/physicianbench-public-two-consilium/
+          retention-days: 14
+          if-no-files-found: warn
