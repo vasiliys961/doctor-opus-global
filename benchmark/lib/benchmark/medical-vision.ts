@@ -16,6 +16,7 @@ export type BenchmarkImageInput = {
   modality: BenchmarkImageModality;
   images: Array<{ base64: string; mimeType: 'image/png' | 'image/jpeg' | 'image/webp' }>;
   allowSecondRead?: boolean;
+  forceSecondRead?: boolean; // research A/B only; baseline stays conditional
 };
 export type BenchmarkVisionOutput = {
   modality: BenchmarkImageModality;
@@ -98,7 +99,7 @@ export async function analyzeBenchmarkMedicalImage(input:BenchmarkImageInput):Pr
   let secondRead=false;
   let cost=first.costUsd;
   const models=[MODELS.GEMINI_3_FLASH];
-  if(routing.escalate && input.allowSecondRead!==false) {
+  if((routing.escalate || input.forceSecondRead===true) && input.allowSecondRead!==false) {
     const second=await callDiagnosticAgent({
       systemPrompt:prompt,
       userContent:[{type:'text',text:'Provide an INDEPENDENT second read from the original image(s); describe only findings.'},...pixels],
@@ -127,6 +128,6 @@ export async function analyzeBenchmarkMedicalImage(input:BenchmarkImageInput):Pr
   return {
     modality:input.modality,observation,primaryObservation:firstJson,
     independentSecondObservation:secondObservation,report:reportCall.content.trim(),
-    secondRead,secondReadReasons:routing.reasons,models,estimatedCostUsd:cost
+    secondRead,secondReadReasons:input.forceSecondRead===true?['forced_blinded_ab',...routing.reasons]:routing.reasons,models,estimatedCostUsd:cost
   };
 }
