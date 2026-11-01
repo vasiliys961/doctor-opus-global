@@ -1,0 +1,50 @@
+name: MAST derm ISIC2016 CC0 ten original images true model inference
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-isic2016-10-real-images.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-isic-ten:
+    runs-on: ubuntu-latest
+    timeout-minutes: 28
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install minimal source data verifier
+        run: python -m pip install -q requests Pillow
+      - name: Fetch 5 benign + 5 malignant original image JPEGs from official public CC0 ISIC archive
+        working-directory: benchmark
+        run: python scripts/fetch-isic-2016-ten.py
+      - name: Install benchmark test runner
+        working-directory: benchmark
+        run: npm install --no-audit --no-fund
+      - name: Blind 10-image clinical image-to-report and malignancy classification pilot
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        working-directory: benchmark
+        run: npx vitest --config vitest.isic2016.ten.config.ts run lib/benchmark/mast.isic2016-ten.live.test.ts --testTimeout=1500000
+      - name: Save reports, labels, provenance and measured billing (NEVER actual image pixels)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-isic2016-public-10-derm-evaluation
+          path: |
+            benchmark/internal-results/isic2016-ten/
+            benchmark/isic2016-ten/manifest.json
+          retention-days: 21
+          if-no-files-found: warn
+      - name: Delete all downloaded JPEG originals from disposable runner
+        if: always()
+        run: rm -rf benchmark/isic2016-ten/images/
