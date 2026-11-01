@@ -1,0 +1,62 @@
+name: MAST two real ECG Opus+NeuroKit cases through full Doctor Opus consilium
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-unified-ecg-two-consilium.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unified-two:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: vasiliys961/ecg-opus-global
+          ref: b0d1c3b5745dd348aa81670452aac0d6a7150fd8
+          path: ecg-opus-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Original pinned ECG Opus numeric dependencies
+        run: |
+          python -m pip install -q 'numpy==1.26.4' 'pandas==2.2.3' 'scipy==1.14.1' 'neurokit2==0.2.12' matplotlib
+          python -m pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Source measurements and diagnosis-blinded original waveform images
+        env:
+          PYTHONPATH: ecg-opus-source
+        run: |
+          python benchmark/scripts/measure_ecg_opus_original_three.py ecg-opus-source/examples2 benchmark/internal-results/ecg-opus-digital-three
+          python benchmark/scripts/render_ecg_opus_public_examples.py ecg-opus-source/examples2 ecg-opus-rendered
+      - name: Install separate MAST contest dependencies
+        working-directory: benchmark
+        run: npm install --no-audit --no-fund
+      - name: Unit/contract gate for multimodal consilium and image originality
+        working-directory: benchmark
+        run: npx vitest --config vitest.sourcebound-contract.config.ts run
+      - name: Run two real fully unified ECG specialist + parent Doctor Opus consilium
+        working-directory: benchmark
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.unified-ecg-two.live.config.ts run --testTimeout=1600000
+      - name: Archive outputs and costs (never public image pixels or raw signals)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mast-unified-ecg-two-clinical-consilium
+          path: benchmark/internal-results/unified-ecg-two/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Destroy temporary raw ECG and image sources
+        if: always()
+        run: rm -rf ecg-opus-source ecg-opus-rendered
