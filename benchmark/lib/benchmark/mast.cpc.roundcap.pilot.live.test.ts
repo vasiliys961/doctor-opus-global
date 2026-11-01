@@ -21,7 +21,7 @@ function deltaErrors(before:Record<string,number>,after:Record<string,number>):R
 }
 function publicSyntheticCases():SyntheticCase[]{
   if(!existsSync(DATA_DIR))throw Error('Synthetic SDBench data missing; abort before inference');
-  const paths=readdirSync(DATA_DIR).filter(f=>/^case_.*\\.json$/.test(f)).sort();
+  const paths=readdirSync(DATA_DIR).filter(f=>/^case_.*\.json$/.test(f)).sort();
   if(paths.length<3)throw Error('Need at least 3 synthetic cases');
   return [paths[0],paths[2]].map(p=>JSON.parse(readFileSync(join(DATA_DIR,p),'utf8')) as SyntheticCase);
 }
@@ -47,7 +47,7 @@ it('contest-only 1-round full-consilium CPC-like A/B: 2 original synthetic open 
       stopReason='Budget or price tracking guard';break;
     }
     if(!item.initial_presentation || item.initial_presentation.length<500)throw Error('Initial presentation missing');
-    const prompt='Synthetic clinical reasoning pilot, NOT official CPC-Bench. From the INITIAL PRESENTATION ONLY, provide leading diagnosis and two alternatives, supporting and conflicting evidence, discriminative next tests and uncertainty. Do not invent facts.\\n\\nINITIAL PRESENTATION:\\n'+item.initial_presentation;
+    const prompt='Synthetic clinical reasoning pilot, NOT official CPC-Bench. From the INITIAL PRESENTATION ONLY, provide leading diagnosis and two alternatives, supporting and conflicting evidence, discriminative next tests and uncertainty. Do not invent facts.\n\nINITIAL PRESENTATION:\n'+item.initial_presentation;
     const started=Date.now();
     try{
       const answer=await answerMastCase(prompt);
@@ -63,7 +63,7 @@ it('contest-only 1-round full-consilium CPC-like A/B: 2 original synthetic open 
         pricedCalls:after.pricedCalls-before.pricedCalls,
         unpricedCalls:after.unpricedCalls-before.unpricedCalls
       };
-      appendFileSync(OUT+'/answers.jsonl',JSON.stringify(record)+'\\n');
+      appendFileSync(OUT+'/answers.jsonl',JSON.stringify(record)+'\n');
       console.log('CPC_ROUNDCAP_CASE '+JSON.stringify({...record,response:undefined,referenceDiagnosisForOfflineReview:undefined}));
       completed++;
       if(record.unpricedCalls>0){stopReason='Unpriced call';break;}
