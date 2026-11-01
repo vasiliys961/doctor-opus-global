@@ -22,8 +22,11 @@ function deltaErrors(before:Record<string,number>,after:Record<string,number>):R
 function publicSyntheticCases():SyntheticCase[]{
   if(!existsSync(DATA_DIR))throw Error('Synthetic SDBench data missing; abort before inference');
   const paths=readdirSync(DATA_DIR).filter(f=>/^case_.*\.json$/.test(f)).sort();
-  if(paths.length<3)throw Error('Need at least 3 synthetic cases');
-  return [paths[0],paths[2]].map(p=>JSON.parse(readFileSync(join(DATA_DIR,p),'utf8')) as SyntheticCase);
+  if(paths.length<4)throw Error('Need at least four synthetic cases');
+  const chosen=(process.env.MAST_CPC_CASE_IDS||'0,2').split(',').map(x=>Number(x.trim()));
+  if(chosen.length!==2 || chosen.some(id=>!Number.isInteger(id)||id<0||id>=paths.length) || new Set(chosen).size!==2)
+    throw Error('Invalid preregistered case selection');
+  return chosen.map(index=>JSON.parse(readFileSync(join(DATA_DIR,paths[index]),'utf8')) as SyntheticCase);
 }
 
 it('contest-only 1-round full-consilium CPC-like A/B: 2 original synthetic open cases',async()=>{
