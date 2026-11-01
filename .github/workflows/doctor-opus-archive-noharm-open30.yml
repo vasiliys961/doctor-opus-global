@@ -1,0 +1,116 @@
+name: Archive Doctor Opus open NOHARM results in source code
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/doctor-opus-archive-noharm-open30.yml]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  archive-public-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RESULTS_DIR: benchmark/results/2026-10-31-noharm-open30-k1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Retrieve original frozen public-only benchmark output
+        run: |
+          mkdir -p /tmp/doctor-opus-mast/inference /tmp/doctor-opus-mast/judge
+          gh run download 41237938481 --repo "${{ github.repository }}" --name doctor-opus-full-consilium-noharm30 --dir /tmp/doctor-opus-mast/inference
+          gh run download 41241683221 --repo "${{ github.repository }}" --name doctor-opus-noharm30-autoscore-results --dir /tmp/doctor-opus-mast/judge
+      - name: Validate and preserve exact original files, not retyped/rounded rows
+        run: |
+          python3 - <<'PY'
+          import json, csv, hashlib, pathlib, shutil, os
+          out=pathlib.Path(os.environ['RESULTS_DIR'])
+          out.mkdir(parents=True,exist_ok=True)
+          inf=pathlib.Path('/tmp/doctor-opus-mast/inference')
+          judge=pathlib.Path('/tmp/doctor-opus-mast/judge')
+          def find(folder,basename):
+              p=list(folder.rglob(basename))
+              if len(p)!=1:raise RuntimeError(f'Expected exactly one {basename}: {p}')
+              return p[0]
+          source={
+            'original-responses.jsonl':find(inf,'doctor-opus-consilium.jsonl'),
+            'inference-ledger.jsonl':find(inf,'ledger.jsonl'),
+            'inference-summary.json':find(inf,'summary.json'),
+            'official-rubric-alternate-transport-judged.jsonl':find(judge,'doctor-opus-consilium-v1-autoscore_judged.jsonl'),
+            'original-mast-score.csv':find(judge,'doctor-opus-consilium-v1-autoscore.csv'),
+            'clinical-audit-original.md':find(judge,'error-audit.md'),
+          }
+          summary=json.loads(source['inference-summary.json'].read_text())
+          responses=[json.loads(x) for x in source['original-responses.jsonl'].read_text().splitlines() if x.strip()]
+          judged=[json.loads(x) for x in source['official-rubric-alternate-transport-judged.jsonl'].read_text().splitlines() if x.strip()]
+          ledger=[json.loads(x) for x in source['inference-ledger.jsonl'].read_text().splitlines() if x.strip()]
+          assert summary['completed']==30 and summary['failed']==0
+          assert len(responses)==len(judged)==len(ledger)==30
+          assert len({r['id'] for r in responses})==30
+          assert {r['id'] for r in responses}=={r['id'] for r in judged}
+          assert {r['id'] for r in responses}=={r['id'] for r in ledger}
+          assert sum(x['metrics']['Severe_rate']>0 for x in judged)==2
+          metrics=list(csv.DictReader(source['original-mast-score.csv'].open()))
+          weighted=[r for r in metrics if r['metric']=='F1_weighted' and r['category']=='Overall']
+          assert len(weighted)==1 and round(float(weighted[0]['mean']),4)==0.8555
+          # All these inputs were generated solely on public open NOHARM data.
+          # Do not reuse this archiver for any future/private organizer queries.
+          hashes={}
+          for name,src in source.items():
+              shutil.copyfile(src,out/name)
+              hashes[name]=hashlib.sha256((out/name).read_bytes()).hexdigest()
+          index={x['id']:x for x in judged}
+          usage={x['id']:x for x in ledger}
+          with (out/'cases.csv').open('w',newline='') as f:
+              w=csv.writer(f)
+              w.writerow(['case_id','F1_weighted','Severe_rate','Precision_weighted','Recall_weighted','seconds_current_run','cost_usd_current_run','failed_calls_current_run','source'])
+              for cid in sorted(index):
+                  m=index[cid]['metrics'];u=usage[cid]
+                  w.writerow([cid,m['F1_weighted'],m['Severe_rate'],m['Precision_weighted'],m['Recall_weighted'],u['elapsedSeconds'],u['costUsd'],u['agentApiFailures'],u['source']])
+          manifest={
+            'benchmark':'MAST First Do NOHARM v2','scope':'30 public baseline cases only','k':1,
+            'clinical_system':'Doctor Opus full multiagent consilium','frozen_inference_sha':summary.get('inference_sha','cf6065ca9b9a2f6d84d396fc027eb1f464b6fbed'),
+            'benchmark_dataset_sha':'57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee',
+            'inference_run_url':'https://github.com/vasiliys961/doctor-opus-global/actions/runs/41237938481',
+            'judge_run_url':'https://github.com/vasiliys961/doctor-opus-global/actions/runs/41241683221',
+            'judge':'MAST original match/review prompts and score.py; Gemini via OpenRouter, NOT direct Google SDK',
+            'evaluation_not_official_or_leaderboard_comparable':True,
+            'uses_patient_data':False,
+            'baseline_summary':summary,
+            'record_hashes_sha256':hashes,
+            'previous_pilot_cost_usd':0.49876,
+            'judge_cost_usd':1.057948,
+          }
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2,ensure_ascii=False)+'\n')
+          (out/'README.md').write_text(
+            '# Doctor Opus Global — public NOHARM 30-case baseline (k=1)\n\n'
+            '**Not an official MAST leaderboard score.** Internal test of the full multiagent system on 30 *open* base cases.\n\n'
+            '- Weighted F1: 0.8555 (95% CI 0.8136–0.8940)\n'
+            '- Severe harm flags: 2/30 (6.67%) according to the alternative-transport judge\n'
+            '- 30/30 output completed, 26 provider-call failures during 27 new cases\n'
+            '- $4.76143 new inference + $0.49876 prior pilot + $1.057948 judge ~= $6.31814\n\n'
+            '## Evidence files\n\n'
+            '- [original-mast-score.csv](original-mast-score.csv) exact overall official scoring *algorithm* CSV\n'
+            '- [cases.csv](cases.csv) exact item-level numbers from original graded JSONL\n'
+            '- [original-responses.jsonl](original-responses.jsonl) clinical answers to *public* test prompts only\n'
+            '- [official-rubric-alternate-transport-judged.jsonl](official-rubric-alternate-transport-judged.jsonl) per-case rubric judgements\n'
+            '- [inference-ledger.jsonl](inference-ledger.jsonl) cost, time and failed API attempts\n'
+            '- [clinical-audit-original.md](clinical-audit-original.md) judge-generated error review\n'
+            '- [manifest.json](manifest.json) code SHA, provenance and SHA256 integrity hashes\n\n'
+            '**MAST conditions:** the organizer requires zero retention of prompts and responses received during *official private* API assessment. This directory contains **public open-set self-evaluation only**.\n'
+            'This experiment uses 30 originals (k=1), while public MAST comparator results use all 330 variants (k=11); no direct ranking is justified.\n'
+          )
+          print('ARCHIVE VERIFIED files',list(hashes),'cases',len(judged),'F1',weighted[0]['mean'])
+          PY
+      - name: Commit exact open-set results to repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$RESULTS_DIR"
+          if ! git diff --cached --quiet; then
+            git commit -m "docs(eval): persist exact open NOHARM full-system responses and judge results"
+            git push origin HEAD:main
+          fi
