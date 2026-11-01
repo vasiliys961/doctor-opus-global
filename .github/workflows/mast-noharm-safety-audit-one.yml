@@ -1,0 +1,46 @@
+name: MAST contest saved-answer medication safety audit
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-noharm-safety-audit-one.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  independent-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retrieve single existing public NOHARM answer; do not rerun full consilium
+        run: |
+          mkdir -p audit-source
+          gh run download 41302393853 --repo "${{ github.repository }}" \
+            --name doctor-opus-noharm-opus55-known-safety-case --dir audit-source
+      - name: Install benchmark
+        working-directory: benchmark
+        run: npm install --no-audit --no-fund
+      - name: Evaluate exactly one independent medication safety review
+        working-directory: benchmark
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+          MAST_SAFETY_GATE_MODE: audit
+        run: npx vitest --config vitest.safety-audit.config.ts run lib/benchmark/clinical-safety-review.live.test.ts --testTimeout=180000
+      - name: Preserve only the reviewer findings, not the original answer
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-noharm-safety-audit-one
+          path: benchmark/internal-results/clinical-safety-audit/
+          retention-days: 21
+          if-no-files-found: warn
