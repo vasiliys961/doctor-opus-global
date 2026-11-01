@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install separate benchmark runtime
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
       - name: Evaluate original SCT expert-alignment on 4 matched clinical cases
         run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.sct.consilium.paired.live.test.ts --testTimeout=5400000
       - name: Preserve predictions, original IDs, costs and scored differences
