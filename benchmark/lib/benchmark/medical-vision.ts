@@ -34,7 +34,7 @@ const specialties: Record<BenchmarkImageModality, Specialty> = {
 };
 
 function parseJson(text: string): Record<string, unknown> | null {
-  const cleaned = text.replace(/^\\s*\\x60\\x60\\x60(?:json)?\\s*/i,'').replace(/\\s*\\x60\\x60\\x60\\s*$/,'').trim();
+  const cleaned = text.replace(/^\s*\x60\x60\x60(?:json)?\s*/i,'').replace(/\s*\x60\x60\x60\s*$/,'').trim();
   for(const candidate of [cleaned,cleaned.slice(cleaned.indexOf('{'),cleaned.lastIndexOf('}')+1)]){
     if(!candidate.startsWith('{'))continue;
     try {
@@ -105,8 +105,8 @@ export async function analyzeBenchmarkMedicalImage(input:BenchmarkImageInput):Pr
   // avoid the observer instructing or biasing the second model's diagnosis.
   const reportCall=await callDiagnosticAgent({
     systemPrompt:buildReportInstruction(input.modality),
-    userContent:'STRUCTURED IMAGE FINDINGS (not verified diagnoses):\\n'+JSON.stringify(prepareVisionDataForTextPrompt(observation))+
-      '\\nReturn the modality-appropriate clinical report. Do not claim clinical history or measurements absent from the source.',
+    userContent:'STRUCTURED IMAGE FINDINGS (not verified diagnoses):\n'+JSON.stringify(prepareVisionDataForTextPrompt(observation))+
+      '\nReturn the modality-appropriate clinical report. Do not claim clinical history or measurements absent from the source.',
     model:MODELS.SONNET,maxTokens:1800,reasoningEffort:'low'
   });
   cost+=reportCall.costUsd;
