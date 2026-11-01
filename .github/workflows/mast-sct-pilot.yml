@@ -1,4 +1,5 @@
 name: MAST internal SCT eight-case pilot
+# 2026-11-01: rerun existing cost-guarded 8-case pilot on contest branch only
 on:
   push:
     branches: [feat/mast-consilium-adapter]
