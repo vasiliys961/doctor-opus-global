@@ -38,9 +38,13 @@ export function formatECGOpusDigitalEvidence(data:unknown):string{
  const values=Object.fromEntries(
    ['beats',...PARAMETERS].map(k=>[k,data[k as keyof ECGOpusMeasuredSignal]])
  );
+ const rrSpreadRatio=data.rr_min_ms!==null&&data.rr_max_ms!==null&&data.rr_min_ms>0
+  ?Number((data.rr_max_ms/data.rr_min_ms).toFixed(2)):null;
  return JSON.stringify({
   origin:'automated NeuroKit2 measurements of original 12-lead digital signal',
   measurements:values,
+  derivedResearchChecks:{rrMaxToMinRatio:rrSpreadRatio,
+   interpretation:'A wide RR range may suggest cycle-length variability OR beat-detection error; inspect the waveform before diagnosing AF/flutter or declaring regularity.'},
   limitations:[
    'NeuroKit2 delineation is algorithmic and has NOT been manually verified',
    'Do not diagnose organized atrial activity or report a valid PR solely from an auto-computed PQ when atrial rhythm is irregular or P waves are not convincingly present',
