@@ -1,0 +1,59 @@
+name: MAST candidate local HTTP ten-concurrent request pressure test
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-http-ten-concurrency.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate one-time local-only bearer token
+        shell: bash
+        run: echo "MAST_BENCHMARK_TOKEN=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Install and build exact candidate
+        working-directory: benchmark
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Launch local isolated HTTP server
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd benchmark
+          nohup npx next start -p 3000 > /tmp/mast-http-server.log 2>&1 &
+          echo $! > /tmp/mast-http-server.pid
+          for i in $(seq 1 50); do
+            if curl --fail --silent --max-time 2 http://127.0.0.1:3000/api/health >/dev/null; then echo 'MAST_HTTP_READY'; exit 0; fi
+            sleep 2
+          done
+          echo 'Local benchmark HTTP server failed'
+          tail -n 40 /tmp/mast-http-server.log
+          exit 1
+      - name: 10 concurrent HTTP requests to actual MAST submission endpoint
+        working-directory: benchmark
+        run: node scripts/mast-http-10-parallel.mjs
+      - name: Persist only latency and response-validity summaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-mast-http-10-concurrent
+          path: benchmark/internal-results/http-load-10/report.json
+          retention-days: 21
+          if-no-files-found: warn
+      - name: Terminate isolated local HTTP
+        if: always()
+        run: kill "$(cat /tmp/mast-http-server.pid)" || true
