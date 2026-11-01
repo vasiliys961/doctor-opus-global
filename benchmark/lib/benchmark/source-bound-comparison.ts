@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 /** Source-bound comparative imaging, contest-only adaptation of mother's
  * /comparative (temporal/location/general), video-comparison and
  * multiple-image transport. Unlike the historic first-image-only failure,
@@ -40,6 +41,7 @@ export function validateComparison(input:ComparisonInput):void{
  if(!ID.test(scope))throw Error('Missing consistent source scope');
  for(const frame of input.frames){
   if(!ID.test(frame.sourceId)||ids.has(frame.sourceId)||!SHA.test(frame.sourceSha256)||
+    createHash('sha256').update(Buffer.from(frame.image.base64,'base64')).digest('hex')!==frame.sourceSha256||
     hashes.has(frame.sourceSha256)||frame.subjectScope!==scope)
     throw Error('Mixed sources, duplicate pixels or mismatched source scope');
   ids.add(frame.sourceId);hashes.add(frame.sourceSha256);
