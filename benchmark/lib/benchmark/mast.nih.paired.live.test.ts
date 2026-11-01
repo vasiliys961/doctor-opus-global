@@ -8,7 +8,7 @@ const CASES=[
  {id:'synthetic-pjp',question:'A fictional 43-year-old man with newly diagnosed HIV has CD4 count 65 cells/uL, fever, exertional dyspnea, resting oxygen saturation 88%, bilateral ground-glass lung opacities, positive induced-sputum Pneumocystis PCR. No known drug allergies, creatinine 0.9 mg/dL. Provide immediate triage, diagnostic confirmation, treatment including severity assessment and when to consider adjunctive corticosteroids, preventive care and monitoring.'},
  {id:'synthetic-toxoplasma',question:'A fictional 38-year-old woman with untreated advanced HIV (CD4 42 cells/uL) has headache, new right-arm weakness and two ring-enhancing cerebral lesions with edema. Toxoplasma IgG is positive. Vital signs stable; no listed drug allergies. Describe initial evaluation, differential diagnosis, treatment strategy including how to assess response and when tissue diagnosis is needed, and actions to prevent avoidable harm.'},
 ];
-const round=x=>Number(x.toFixed(4));
+const round=(x:number)=>Number(x.toFixed(4));
 it('full clinical consilium A/B with optional NIH RAG on synthetic cases',async()=>{
   mkdirSync(OUT,{recursive:true});
   writeFileSync(OUT+'/responses-control.jsonl','');
