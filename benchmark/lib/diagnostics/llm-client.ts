@@ -15,6 +15,23 @@ const REQUEST_TIMEOUT_MS = 60000;
 const actualUsage = { pricedCalls: 0, unpricedCalls: 0, failedCalls: 0, promptTokens: 0, completionTokens: 0, costUsd: 0 };
 export function getDiagnosticApiUsageSnapshot() { return { ...actualUsage }; }
 
+/** Aggregate sanitized failure classes only (never prompts, responses, tokens or user identifiers).
+ * Useful for deciding if 300s deadline misses are provider outages or clinical orchestration.
+ */
+const failureKinds: Record<string, number> = Object.create(null);
+export function getDiagnosticApiFailureSummary(): Record<string, number> { return { ...failureKinds }; }
+function classifyProviderFailure(error: unknown): string {
+  const e = error as { name?: string; message?: string } | null;
+  const message = String(e?.message || '');
+  const code = message.match(/OpenRouter API error: (\\d{3})/);
+  if (code) return 'http_' + code[1];
+  if (/abort|timeout|timed out/i.test(String(e?.name || '') + ' ' + message)) return 'timeout';
+  if (/All providers unavailable/i.test(message)) return 'providers_unavailable';
+  if (/No configured LLM provider/i.test(message)) return 'unconfigured';
+  return 'other';
+}
+
+
 
 export interface LlmCallResult {
   content: string;
@@ -86,6 +103,8 @@ async function callOpenRouterOnce(params: {
     return { content, promptTokens, completionTokens, costUsd, model };
   } catch (error: any) {
     actualUsage.failedCalls++;
+    const key = model + ':' + classifyProviderFailure(error);
+    failureKinds[key] = (failureKinds[key] || 0) + 1;
     return {
       content: '',
       promptTokens: 0,
