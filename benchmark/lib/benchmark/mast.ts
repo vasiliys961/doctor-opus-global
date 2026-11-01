@@ -94,6 +94,24 @@ Before writing, silently check the following decision sequence:
 Use a brief action-first answer followed by only clinically relevant tests, treatment, monitoring and safety; avoid defensive laundry lists and unnecessary delay of decisions.
 Put the direct answer to the clinical question in the first sentence (for example whether to continue, hold, or discontinue a therapy), then explain the action plan. Distinguish actions NOW from actions indicated only if symptoms recur. Do not recommend reflex emergency drugs for a resolved historical reaction. Explicitly state if specialist review is required before re-exposure to a drug associated with a serious reaction.\nDo not output internal JSON, probability scores or long debate transcripts. Do not sacrifice essential life-saving actions for concision.`;
 
+/**
+ * Experimental, OFF BY DEFAULT, medication-safety evidence for the full
+ * consilium. Unlike the standalone SCT branch, this path uses runConsilium.
+ * The RAG corpus is openFDA PUBLIC prescribing labels; no benchmark answer,
+ * grader rubric or private test item is ever indexed.
+ */
+async function lookupExperimentalRagEvidence(caseText: string): Promise<string> {
+  const path=(process.env.MAST_RAG_INDEX_PATH || '').trim();
+  if(!path) return '';
+  const {medicationEvidence}=await import('../../rag/retrieve.mjs');
+  const result=await medicationEvidence(caseText,path,{limit:4,maxChars:3700});
+  console.log('MAST_RAG_LOOKUP '+JSON.stringify({
+    enabled:true, matchedDrugs:result.drugs, retrieved:result.retrieved,
+    sourceIds:result.hits.map(x=>x.id),
+  }));
+  return result.evidence;
+}
+
 export async function answerMastCase(caseText: string): Promise<MastResponse | ScriptConcordanceResponse> {
   const cleaned = caseText.trim();
   if (!cleaned || cleaned.length > 100_000) throw new Error('Invalid clinical case length');
@@ -112,7 +130,14 @@ export async function answerMastCase(caseText: string): Promise<MastResponse | S
     return parseScriptConcordance(assessment.content);
   }
 
-  const result = await runConsilium({ patientId: 'benchmark-anonymous', freeTextInput: cleaned });
+  // Evidence is provided separately from the ORIGINAL clinical case, so
+  // source excerpts cannot be mistaken for new symptoms or patient facts.
+  const ragEvidence=await lookupExperimentalRagEvidence(cleaned);
+  const result = await runConsilium({
+    patientId: 'benchmark-anonymous',
+    freeTextInput: cleaned,
+    ...(ragEvidence ? {attachedDocuments:[ragEvidence]} : {}),
+  });
   if (!result.finalDiagnosis.diagnosis || !result.finalDiagnosis.reasoning) {
     throw new Error('Consilium did not produce a valid diagnostic assessment');
   }
@@ -123,7 +148,8 @@ export async function answerMastCase(caseText: string): Promise<MastResponse | S
     maxTokens: 2400,
     reasoningEffort: 'low',
     systemPrompt: MAST_MANAGEMENT_PROMPT,
-    userContent: buildMastManagementContext(cleaned, result),
+    userContent: buildMastManagementContext(cleaned, result)+
+      (ragEvidence ? '\\n\\n### VERIFIED EXTERNAL REFERENCE EXCERPTS (not clinical case facts)\\n'+ragEvidence : ''),
   });
   // Preserve the baseline response on provider errors; never invent management details.\n  // Deliberately do not hard-truncate text to 500 words: doing so may drop critical safety actions.
   const response = !finalCall.error && finalCall.content.trim().length >= 100
