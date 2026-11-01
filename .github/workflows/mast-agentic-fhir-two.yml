@@ -1,4 +1,5 @@
 name: MAST agentic synthetic FHIR tool-loop pilot
+# Sonnet A/B rerun; original Gemini Flash results retained in prior Actions artifacts.
 on:
   push:
     branches: [feat/mast-consilium-adapter]
