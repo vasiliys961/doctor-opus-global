@@ -2,18 +2,34 @@ import {it,expect} from 'vitest';
 import {readFileSync,mkdirSync,writeFileSync,appendFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {analyzeECGOpusImage} from './ecg-opus-image';
+import type {ECGOpusMeasuredSignal} from './ecg-opus-digital-evidence';
 import {getDiagnosticApiUsageSnapshot} from '../diagnostics/llm-client';
 const CASES=[
  {id:'case-00001',reference:'normal-rhythm'},
  {id:'case-00351',reference:'atrial-fibrillation'},
  {id:'case-01541',reference:'myocardial-infarction'}
 ] as const;
-const OUT='internal-results/ecg-opus-public-three';
+const FUSED=process.env.ECG_OPUS_USE_DIGITAL_MEASUREMENTS==='true';
+const OUT=FUSED?'internal-results/ecg-opus-fused-three':'internal-results/ecg-opus-public-three';
 it('3 actual ECG Opus original 12-lead signals rendered blinded and read Gemini -> Claude Opus',async()=>{
  mkdirSync(OUT,{recursive:true});
  writeFileSync(OUT+'/reports.jsonl','');
  const started=getDiagnosticApiUsageSnapshot();
  let completed=0;
+ const digitalById=new Map<string,ECGOpusMeasuredSignal>();
+ if(FUSED){
+  const fixture=JSON.parse(readFileSync('internal-results/ecg-opus-digital-three/summary.json','utf8')) as {cases:Array<Record<string,unknown>>};
+  if(fixture.cases.length!==CASES.length)throw Error('Digital ECG source sample mismatch');
+  for(const row of fixture.cases){
+   if(row.available!==true || typeof row.case!=='string')throw Error('Digital ECG not measured');
+   // Reference diagnoses are held for local grading only, NEVER passed to LLM.
+   const {case:sourceId,reference:ignoredReference,method:ignoredMethod,...values}=row;
+   void ignoredReference;void ignoredMethod;
+   digitalById.set(sourceId as string,{
+      ...(values as Omit<ECGOpusMeasuredSignal,'method'>),
+      method:'ECG Opus NeuroKit2'});
+  }
+ }
  for(const item of CASES){
   const prior=getDiagnosticApiUsageSnapshot();
   if(prior.costUsd-started.costUsd>1.40)throw Error('ECG model cost guard');
@@ -21,7 +37,12 @@ it('3 actual ECG Opus original 12-lead signals rendered blinded and read Gemini 
   if(pixels.length<30_000||pixels[0]!==137||pixels[1]!==80)throw Error('Expected real ECG PNG');
   const t0=Date.now();
   // No clinical reference, diagnosis label or filename reaches either model.
-  const result=await analyzeECGOpusImage({image:{mimeType:'image/png',base64:pixels.toString('base64')}});
+  const result=await analyzeECGOpusImage({
+   image:{mimeType:'image/png',base64:pixels.toString('base64')},
+   digitalMeasurements:FUSED?digitalById.get(item.id):undefined
+  });
+  if(FUSED&&result.originalSignalNeuroKitMeasured!==true)
+    throw Error('Digital-visual ECG evidence not fused');
   if(!result.report||result.report.length<70||result.digitalECGFounderExecuted!==false)
     throw Error('ECG Opus report or provenance missing');
   const after=getDiagnosticApiUsageSnapshot();
@@ -29,6 +50,7 @@ it('3 actual ECG Opus original 12-lead signals rendered blinded and read Gemini 
   const row={id:item.id,reference:item.reference,sourceSha256:createHash('sha256').update(pixels).digest('hex'),
     report:result.report,geminiObservation:result.geminiVisualDescription,
     models:result.models,digitalECGFounderExecuted:false,
+    originalSignalNeuroKitMeasured:result.originalSignalNeuroKitMeasured,
     seconds:Number(((Date.now()-t0)/1000).toFixed(2)),
     costUsd:Number((after.costUsd-prior.costUsd).toFixed(5))};
   appendFileSync(OUT+'/reports.jsonl',JSON.stringify(row)+'\n');
@@ -39,6 +61,7 @@ it('3 actual ECG Opus original 12-lead signals rendered blinded and read Gemini 
  const summary={completed,planned:3,providerFailures:end.failedCalls-started.failedCalls,
   unpricedCalls:end.unpricedCalls-started.unpricedCalls,
   costUsd:Number((end.costUsd-started.costUsd).toFixed(5)),
+  fusionMode:FUSED?'NeuroKit digital + original-image Gemini/Opus':'original image only',
   source:'vasiliys961/ecg-opus-global pinned PTB-XL examples rendered without reference labels',
   metric:'Original 12-lead image technical report only; no ECGFounder weights, no diagnostic accuracy estimate, clinical adjudication pending'};
  writeFileSync(OUT+'/summary.json',JSON.stringify(summary,null,2));
