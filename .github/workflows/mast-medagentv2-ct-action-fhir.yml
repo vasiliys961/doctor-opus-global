@@ -1,4 +1,5 @@
 name: MAST v2 CT follow-up FHIR ordering with author's grader
+# Revalidate original grader after adding no-op transcript terminator to avoid its known off-by-one.
 on:
   push:
     branches: [feat/mast-consilium-adapter]
