@@ -1,0 +1,25 @@
+name: MAST Redivis AIMI catalog reference metadata resolution
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-redivis-aimi-owner-resolution.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  aimi-owner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    env:
+      REDIVIS_API_TOKEN: ${{ secrets.REDIVIS_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -q redivis requests
+      - name: Resolve dataset-owner handles (metadata only)
+        run: python benchmark/scripts/redivis_aimi_owner_probe.py
