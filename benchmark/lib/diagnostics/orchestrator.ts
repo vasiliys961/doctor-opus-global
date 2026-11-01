@@ -35,6 +35,12 @@ import {
 
 export type ConsiliumProgressCallback = (event: ConsiliumProgressEvent) => void;
 
+/** Contest-only experiment. The parent clinical main and default two-round route are unchanged. */
+export function getMaxDebateRoundsForMast(): number {
+  return process.env.MAST_CONSILIUM_ROUND_CAP === '1' ? 1 : MAX_DIAGNOSTIC_ROUNDS;
+}
+
+
 interface UsageEntry {
   promptTokens: number;
   completionTokens: number;
@@ -455,7 +461,7 @@ export async function runConsilium(
   // Experimental contest-only limit: compare one versus two debate rounds
   // without changing the original NOHARM baseline or parent Doctor Opus.
   // Never make this the default without paired clinical validation.
-  const maxDebateRounds = process.env.MAST_CONSILIUM_ROUND_CAP === '1' ? 1 : MAX_DIAGNOSTIC_ROUNDS;
+  const maxDebateRounds = getMaxDebateRoundsForMast();
   for (let round = 0; round < maxDebateRounds; round += 1) {
     state.round = round;
     const outputs = await runRound(caseInput, state, onProgress, round === 0 ? precomputedHypothesis : undefined);
