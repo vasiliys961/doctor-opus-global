@@ -1,0 +1,92 @@
+name: MAST NOHARM exact-case label-backed safety A-B
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-noharm-safety-label-ab.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  label-ab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+      MAST_OPENROUTER_JUDGE_CAP_USD: '0.35'
+      MAST_JUDGE_LEDGER: source-results/judge-cost.jsonl
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Reuse frozen public Opus55 answer — no re-inference
+        run: |
+          set -euo pipefail
+          mkdir -p audit-source source-results
+          gh run download 41302393853 --repo "${{ github.repository }}" --name doctor-opus-noharm-opus55-known-safety-case --dir audit-source
+          python - <<'PY'
+          import json,pathlib
+          a=json.loads(pathlib.Path('audit-source/report.json').read_text())
+          assert a['case']=='All001' and a['candidate']=='Claude Opus 5.5 in clinical debate'
+          assert len(a['answer'])>200
+          print('Frozen public All001 baseline recovered; no paid consilium calls.')
+          PY
+      - name: Install contest dependencies
+        run: npm install --no-audit --no-fund
+        working-directory: benchmark
+      - name: Produce isolated source-backed revision without changing baseline
+        working-directory: benchmark
+        run: npx vitest --config vitest.safety-ab.config.ts run lib/benchmark/clinical-safety-ab.live.test.ts --testTimeout=180000
+      - name: Install original public MAST NOHARM grader
+        run: |
+          set -euo pipefail
+          git clone -q https://github.com/ARISENetwork/mast.git mast-reference
+          git -C mast-reference checkout -q 57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          python -m pip install -q -r mast-reference/benchmarks/donoharm/requirements.txt
+          cp benchmark/scripts/noharm-openrouter-judge-transport.py mast-reference/benchmarks/donoharm/judge/gemini_sdk.py
+          mkdir -p mast-reference/results/raw/donoharm/default
+          cp benchmark/internal-results/safety-label-ab/candidate.jsonl mast-reference/results/raw/donoharm/default/doctor-opus-label-ab-onecase.jsonl
+      - name: Blind public rubric scoring — candidate revision only
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          cat > config/models/doctor-opus-label-ab-onecase.yaml <<'YAML'
+          model:
+            name: doctor-opus-label-ab-onecase
+            platform: openrouter
+            model_id: doctor-opus-consilium
+          YAML
+          python score.py --model-config config/models/doctor-opus-label-ab-onecase.yaml --benchmark-config config/benchmark.yaml --k 1 --cases All001 --threads 1
+      - name: Report paired NOHARM F1 vs preserved original one-case baseline
+        run: |
+          python - <<'PY'
+          import json,csv,pathlib
+          p=pathlib.Path('mast-reference/results/scores/donoharm/default/doctor-opus-label-ab-onecase.csv')
+          with p.open() as f: rows=list(csv.DictReader(f))
+          assert len(rows)==1, 'Expected exactly one public rubric score'
+          audit=json.loads(pathlib.Path('benchmark/internal-results/safety-label-ab/audit.json').read_text())
+          print('MAST_SAFETY_LABEL_AB_SCORE '+json.dumps({'source':'public All001, k=1, original rubric through OpenRouter',
+            'candidate':rows[0], 'controlWeightedF1':0.9697,
+            'auditCostUsd':audit['costUsd'],'judgeCostSeeLedger':True,
+            'notOfficial':True}))
+          PY
+      - name: Persist isolated research results, grader decisions and measured spending
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-noharm-official-label-a-b-onecase
+          path: |
+            benchmark/internal-results/safety-label-ab/
+            mast-reference/results/scores/donoharm/default/doctor-opus-label-ab-onecase.csv
+            mast-reference/results/raw/donoharm/default/doctor-opus-label-ab-onecase_judged.jsonl
+            source-results/judge-cost.jsonl
+          retention-days: 21
+          if-no-files-found: warn
