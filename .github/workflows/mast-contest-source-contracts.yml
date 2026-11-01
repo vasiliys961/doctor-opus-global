@@ -1,0 +1,30 @@
+name: MAST contest source evidence + ECG Opus contract regressions
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - '.github/workflows/mast-contest-source-contracts.yml'
+      - 'benchmark/lib/benchmark/source-bound-*.ts'
+      - 'benchmark/lib/benchmark/ecg-opus-*.ts'
+      - 'benchmark/vitest.sourcebound-contract.config.ts'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: No-cost source evidence and source-image ECG assertions
+        run: npx vitest --config vitest.sourcebound-contract.config.ts run
