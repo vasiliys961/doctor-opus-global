@@ -65,5 +65,6 @@ Do NOT migrate proprietary competitor internals; imitate broad patterns: evidenc
 - Unit/contract tests pass and no source metadata or labels leak into prompts.
 - Genuine original inputs processed, artifacts and responses actually inspected.
 - Do not equate CI success, keyword overlap or a single image with diagnosis accuracy.
+- **Diagnosis presentation policy:** the mother Doctor Opus intentionally reasons in differential diagnoses and only selects a *most probable working diagnosis* when it generates the clinical protocol. Preserve this principle. For MAST CPC or an explicit single-best-label task, expose one leading *provisional* answer with its evidence and alternatives; for NOHARM/PhysicianBench retain the action-first question and uncertainty. Lack of an unequivocal assertion is NOT itself a model error; actual wrong ranking, absent critical differential or unsafe management must be judged against the task and ground truth.
 - For any comparative item, source IDs, matching modality and study, ordered dates and projection differences must be explicit.
 - No modification or merge to `main`. Competition branch is independent permanently.
