@@ -12,7 +12,7 @@ it('audit-only review: previously generated Opus55 NOHARM All001 answer without 
  const review=await auditManagementSafety({caseText:clinicalCase,response:saved.answer,mode:'audit'});
  const after=getDiagnosticApiUsageSnapshot();
  const report={originalPreserved:review.response===saved.answer,
-  triggered:review.triggered,verdict:review.verdict,issues:review.issues,
+  triggered:review.triggered,sourceLabels:review.sourceLabels,verdict:review.verdict,issues:review.issues,
   elapsedSeconds:(Date.now()-t0)/1000,costUsd:after.costUsd-before.costUsd,
   unpricedCalls:after.unpricedCalls-before.unpricedCalls,
   note:'Known open one-case independent safety audit; not official NOHARM result or improved F1.'};
@@ -21,6 +21,7 @@ it('audit-only review: previously generated Opus55 NOHARM All001 answer without 
  console.log('MAST_SAFETY_AUDIT_PILOT '+JSON.stringify(report));
  expect(report.originalPreserved).toBe(true);
  expect(review.triggered).toContain('severe_drug_reaction');
+ expect(review.sourceLabels).toContain('nivolumab:infusion_related_reaction:grade_3_or_4');
  expect(report.unpricedCalls).toBe(0);
  expect(review.verdict).not.toBe('unavailable');
 },180000);
