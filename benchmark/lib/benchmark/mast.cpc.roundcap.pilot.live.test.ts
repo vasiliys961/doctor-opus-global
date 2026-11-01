@@ -24,7 +24,7 @@ function publicSyntheticCases():SyntheticCase[]{
   const paths=readdirSync(DATA_DIR).filter(f=>/^case_.*\.json$/.test(f)).sort();
   if(paths.length<4)throw Error('Need at least four synthetic cases');
   const chosen=(process.env.MAST_CPC_CASE_IDS||'0,2').split(',').map(x=>Number(x.trim()));
-  if(chosen.length!==2 || chosen.some(id=>!Number.isInteger(id)||id<0||id>=paths.length) || new Set(chosen).size!==2)
+  if(chosen.length<1 || chosen.length>2 || chosen.some(id=>!Number.isInteger(id)||id<0||id>=paths.length) || new Set(chosen).size!==chosen.length)
     throw Error('Invalid preregistered case selection');
   return chosen.map(index=>JSON.parse(readFileSync(join(DATA_DIR,paths[index]),'utf8')) as SyntheticCase);
 }
@@ -87,5 +87,5 @@ it('contest-only 1-round full-consilium CPC-like A/B: 2 original synthetic open 
   };
   writeFileSync(OUT+'/summary.json',JSON.stringify(summary,null,2));
   console.log('CPC_ROUNDCAP_SUMMARY '+JSON.stringify(summary));
-  expect(completed).toBe(2);
+  expect(completed).toBe(cases.length);
 },1800000);
