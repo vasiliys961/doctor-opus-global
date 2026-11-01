@@ -1,5 +1,5 @@
 name: MAST contest saved-answer medication safety audit
-# Rerun with exact original case and stricter evidence requirement for re-exposure.
+# Reevaluate frozen public case with verified DailyMed label evidence and no full-consilium repeat.
 on:
   push:
     branches: [feat/mast-consilium-adapter]
