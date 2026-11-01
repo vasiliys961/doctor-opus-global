@@ -7,7 +7,7 @@ import type {BenchmarkImageInput} from './medical-vision';
 import type {CpuXrayExecution} from './unified-clinical-chat';
 import {sourceXrayImageSha,XRV_ORIGINAL_SHA256} from './lightweight-xray-cpu';
 
-export function configuredCpuXrayFromEnv(env:NodeJS.ProcessEnv=process.env):CpuXrayExecution|undefined {
+export function configuredCpuXrayFromEnv(env:Record<string,string|undefined>=process.env):CpuXrayExecution|undefined {
  const address=env.MAST_XRV_CPU_URL?.trim();
  const token=env.MAST_XRV_CPU_TOKEN?.trim();
  // An explicit rights grant is necessary because the request sends source
