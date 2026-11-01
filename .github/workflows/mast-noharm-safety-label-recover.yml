@@ -23,6 +23,13 @@ jobs:
           mkdir -p recovered
           gh run download 41306593120 --repo "${{ github.repository }}" \
             --name doctor-opus-noharm-official-label-a-b-onecase --dir recovered
+      - name: Extract measured judge-call prices from original execution logs (no new judge calls)
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run view 41306593120 --repo "${{ github.repository }}" --log \
+            | sed -n 's/.*NOHARM_OPENROUTER_JUDGE_COST //p' > recovered/judge-cost.jsonl
+          test "$(wc -l < recovered/judge-cost.jsonl)" -eq 2
       - name: Parse per-metric CSV without repeating any paid LLM calls
         run: python benchmark/scripts/summarize-noharm-label-ab.py recovered
       - name: Retain verified delta and exact measured costs
