@@ -34,8 +34,12 @@ export function parseGuidelineIndex(content) {
 }
 export function selectContext(searchText,rows){
   const q=String(searchText||'');
-  if(q.length<15||!/HIV|pneumocystis|pneumonia|toxoplasm|opportunistic infection|Mycobacterium avium|MAC disease/i.test(q))
-    return {eligible:false,reason:'outside current source domain',rows:[]};
+  // HIV exposure, testing, PrEP and PEP are NOT the same as HIV opportunistic
+  // infection management; do not let these six OI chapters contaminate them.
+  const specificOI=/pneumocystis|pneumocystis jirovecii|toxoplasm|mycobacterium avium|MAC disease/i.test(q);
+  const hivPneumonia=/\bHIV\b[\s\S]{0,450}\b(pneumonia|opportunistic infection)\b|\b(pneumonia|opportunistic infection)\b[\s\S]{0,450}\bHIV\b/i.test(q);
+  if(q.length<15||!(specificOI||hivPneumonia))
+    return {eligible:false,reason:'outside current NIH opportunistic-infection guidance scope',rows:[]};
   return {eligible:true,reason:'NIH HIV opportunistic-infections scope',rows};
 }
 export async function guidelineEvidence(question,indexPath,opts={}) {
