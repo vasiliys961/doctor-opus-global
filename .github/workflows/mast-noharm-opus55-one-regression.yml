@@ -1,0 +1,40 @@
+name: MAST NOHARM Opus55 one public safety regression
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-noharm-opus55-one-regression.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  known-safety-case:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Evaluate real Opus candidate's grade-3 infusion reaction safety (public, known case)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+          MAST_CONSILIUM_ROUND_CAP: '1'
+          CONSILIUM_DEBATE_MODEL: anthropic/claude-opus-5.5
+          CONSILIUM_DEBATE_FALLBACK_MODEL: anthropic/claude-sonnet-5.5
+        run: npx vitest --config vitest.noharm-opus55-one.config.ts run lib/benchmark/mast.noharm-opus55-one.live.test.ts --testTimeout=500000
+      - name: Save public research answer plus observed API cost
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-noharm-opus55-known-safety-case
+          path: benchmark/internal-results/noharm-opus55-one/
+          retention-days: 21
+          if-no-files-found: warn
