@@ -1,0 +1,33 @@
+name: MAST ISIC2016 ten public-source CC0 provenance preflight (no LLM)
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-isic2016-source-preflight.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isic-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install small source verification dependencies
+        run: python -m pip install -q requests Pillow
+      - name: Fetch exactly 10 JPEGs with ISIC official challenge labels and source checks
+        working-directory: benchmark
+        run: python scripts/fetch-isic-2016-ten.py
+      - name: Persist manifest only (no images or LLM usage)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-isic2016-ten-source-manifest
+          path: benchmark/isic2016-ten/manifest.json
+          retention-days: 21
+          if-no-files-found: warn
