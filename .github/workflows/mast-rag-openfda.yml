@@ -1,0 +1,58 @@
+name: Doctor Opus RAG openFDA safety corpus + E5 index
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/mast-rag-openfda.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-public-pharmacology-index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test license/provenance parser without internet
+        run: |
+          node --test benchmark/rag/indexer.test.mjs benchmark/rag/fetch-openfda.test.mjs
+      - name: Retrieve actual human prescription labels from FDA open-data API
+        run: |
+          node benchmark/rag/fetch-openfda.mjs --output benchmark/rag/data/openfda-safety.jsonl
+          node benchmark/rag/indexer.mjs --input benchmark/rag/data/openfda-safety.jsonl --dry-run
+      - name: Restore cached embedding model
+        uses: actions/cache@v4
+        with:
+          path: benchmark/rag/.cache
+          key: benchmark-e5-small-v1
+      - name: Restore cached evidence vectors
+        uses: actions/cache@v4
+        with:
+          path: benchmark/rag-index-openfda
+          key: benchmark-rag-e5-openfda-v1-${{ hashFiles('benchmark/rag/fetch-openfda.mjs','benchmark/rag/indexer.mjs') }}
+          restore-keys: |
+            benchmark-rag-e5-openfda-v1-
+      - name: Install optional CPU embedding library
+        run: npm install --prefix benchmark/rag --no-audit --no-fund
+      - name: Build medication safety retrieval index
+        run: |
+          node benchmark/rag/indexer.mjs --input benchmark/rag/data/openfda-safety.jsonl --output benchmark/rag-index-openfda/index.jsonl --batch 8
+      - name: Verify no additional embeddings required for unchanged source
+        run: |
+          node benchmark/rag/indexer.mjs --input benchmark/rag/data/openfda-safety.jsonl --output benchmark/rag-index-openfda/index.jsonl --batch 8
+          node -e "const s=require('./benchmark/rag-index-openfda/index.jsonl.manifest.json');if(s.newEmbeddings!==0||s.reused!==s.chunks)process.exit(1);console.log('REUSED_PUBLIC_LABEL_VECTORS '+s.reused+'/'+s.chunks)"
+      - name: Retain public label corpus and index for benchmark RAG comparisons
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-rag-openfda-public-safety-index
+          path: |
+            benchmark/rag/data/openfda-safety.jsonl
+            benchmark/rag/data/openfda-safety.jsonl.provenance.json
+            benchmark/rag-index-openfda/
+          retention-days: 21
+          if-no-files-found: warn
