@@ -42,7 +42,7 @@ it('two authentic IU-Xray ReXrank test studies with original pixels and blinded 
   });
   const begin=Date.now();
   try{
-   const result=await analyzeBenchmarkMedicalImage({modality:'xray',images:imgs,allowSecondRead:true});
+   const result=await analyzeBenchmarkMedicalImage({modality:'xray',images:imgs,allowSecondRead:true,forceSecondRead:process.env.MAST_REXRANK_FORCE_SECOND_READ==='true'});
    const after=getDiagnosticApiUsageSnapshot();
    const reference=source.section_findings+'\n'+source.section_impression;
    const row={id,studyViews:imgs.length,
