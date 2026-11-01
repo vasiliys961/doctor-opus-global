@@ -1,0 +1,46 @@
+{
+  "dataset": "ReXrank IU X-ray public test metadata",
+  "sourceRepository": "rajpurkarlab/ReXrank",
+  "sourceCommit": "0a18a41e580992ac7cd32a8a9463009654f0d390",
+  "sourceFile": "data/iu_xray/ReXRank_IUXray_test.json",
+  "task": "Images only: generate Findings and Impression",
+  "selectedCaseIds": [
+    {
+      "id": "CXR3030_IM-1405",
+      "referenceImagePath": "CXR3030_IM-1405/0.png",
+      "views": [
+        "CXR3030_IM-1405/0.png",
+        "CXR3030_IM-1405/1.png"
+      ],
+      "cohort": "normal-appearing"
+    },
+    {
+      "id": "CXR2363_IM-0926",
+      "referenceImagePath": "CXR2363_IM-0926/0.png",
+      "views": [
+        "CXR2363_IM-0926/0.png"
+      ],
+      "cohort": "airspace opacity"
+    },
+    {
+      "id": "CXR3508_IM-1710",
+      "referenceImagePath": "CXR3508_IM-1710/0.png",
+      "views": [
+        "CXR3508_IM-1710/0.png"
+      ],
+      "cohort": "effusions"
+    },
+    {
+      "id": "CXR3673_IM-1828",
+      "referenceImagePath": "CXR3673_IM-1828/0.png",
+      "views": [
+        "CXR3673_IM-1828/0.png"
+      ],
+      "cohort": "focal lung opacity"
+    }
+  ],
+  "referenceReports": "Use original source file only AFTER inference for clinical scoring; never pass reports or dataset cohort labels into prompt.",
+  "imageDownloadStatus": "NOT VERIFIED: source metadata provides paths, not image files; Open-i currently under maintenance",
+  "researchLicense": "Check individual NLM Open-i image license; no redistribution outside research group.",
+  "researchOnly": true
+}
