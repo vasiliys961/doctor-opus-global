@@ -59,7 +59,7 @@ export function importRadiologySourceEvidence(
   const measurement=human&&f.measurements.diameterMm!==null?
      '; clinician-verified source diameter '+f.measurements.diameterMm+' mm':'';
   findings.push({
-   id:sourceId+':finding'+i,sourceId,modality:obj.modality,
+   id:sourceId+':finding'+i,sourceId,modality:obj.modality as 'CT'|'MR',
    bodyRegion:region,
    frameId:f.source.frameIndex===null?undefined:'frame'+f.source.frameIndex,
    finding:'Anatomy: '+region+'; visual sign: '+sign+measurement,
