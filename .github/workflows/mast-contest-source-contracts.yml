@@ -6,6 +6,9 @@ on:
       - '.github/workflows/mast-contest-source-contracts.yml'
       - 'benchmark/lib/benchmark/source-bound-*.ts'
       - 'benchmark/lib/benchmark/ecg-opus-*.ts'
+      - 'benchmark/lib/benchmark/unified-clinical-chat*.ts'
+      - 'benchmark/lib/benchmark/radiology-source-evidence*.ts'
+      - 'benchmark/app/api/benchmark/clinical-chat/route.ts'
       - 'benchmark/vitest.sourcebound-contract.config.ts'
   workflow_dispatch:
 permissions:
