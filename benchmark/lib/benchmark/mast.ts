@@ -1,6 +1,7 @@
 import { runConsilium } from '../diagnostics/orchestrator';
 import { callDiagnosticAgent } from '../diagnostics/llm-client';
 import { MODELS } from '../openrouter';
+import {auditManagementSafety,requestedSafetyMode} from './clinical-safety-review';
 import type { DiagnosticResult } from '../diagnostics/types';
 import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
@@ -240,5 +241,19 @@ export async function answerMastCase(caseText: string): Promise<MastResponse | S
     ? { response: finalCall.content.trim() }
     : formatMastAnswer(result);
   if (response.response.length < 50) throw new Error('Clinical answer too short');
+  // Safeguard is strictly opt-in for paired benchmark trials, OFF by default.
+  // The independent audit runs AFTER the consilium to avoid anchoring its hypotheses.
+  const safetyMode=requestedSafetyMode();
+  if(safetyMode!=='off'){
+    const audit=await auditManagementSafety({
+      caseText:cleaned,response:response.response,
+      references:externalEvidence.join('\\n\\n'),mode:safetyMode
+    });
+    console.log('MAST_SAFETY_AUDIT '+JSON.stringify({
+      signals:audit.triggered,verdict:audit.verdict,issueCount:audit.issues.length,
+      rewritten:audit.rewritten,costUsd:audit.costUsd
+    }));
+    return {response:audit.response};
+  }
   return response;
 }
