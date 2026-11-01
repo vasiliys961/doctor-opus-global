@@ -133,7 +133,8 @@ export async function callDiagnosticAgent(params: {
   const { fallbackModel, ...primaryParams } = params;
   const primaryResult = await callOpenRouterOnce(primaryParams);
 
-  if (!primaryResult.error || !fallbackModel) {
+  // Never spend a second call retrying the identical model as its own fallback.
+  if (!primaryResult.error || !fallbackModel || fallbackModel === primaryParams.model) {
     if (primaryResult.error) {
       safeError('[CONSILIUM] Agent call failed:', primaryResult.error);
     }
