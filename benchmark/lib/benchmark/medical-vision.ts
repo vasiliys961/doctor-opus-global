@@ -20,6 +20,8 @@ export type BenchmarkImageInput = {
 export type BenchmarkVisionOutput = {
   modality: BenchmarkImageModality;
   observation: Record<string, unknown>;
+  primaryObservation: Record<string, unknown> | null;
+  independentSecondObservation: Record<string, unknown> | null;
   report: string;
   secondRead: boolean;
   secondReadReasons: string[];
@@ -39,7 +41,8 @@ function parseJson(text: string): Record<string, unknown> | null {
     if(!candidate.startsWith('{'))continue;
     try {
       const parsed: unknown = JSON.parse(candidate);
-      if(parsed && typeof parsed==='object' && !Array.isArray(parsed))return parsed as Record<string,unknown>;
+      if(parsed && typeof parsed==='object' && !Array.isArray(parsed) && Array.isArray((parsed as Record<string,unknown>).findings))
+        return parsed as Record<string,unknown>;
     } catch { /* a malformed visual extraction is not evidence */ }
   }
   return null;
@@ -86,6 +89,7 @@ export async function analyzeBenchmarkMedicalImage(input:BenchmarkImageInput):Pr
   const routing=firstJson ? getVisionRoutingDecision(input.modality,firstJson)
     : {escalate:true,reasons:['invalid_visual_json']};
   let observation=firstJson;
+  let secondObservation:Record<string,unknown>|null=null;
   let secondRead=false;
   let cost=first.costUsd;
   const models=[MODELS.GEMINI_3_FLASH];
@@ -98,21 +102,26 @@ export async function analyzeBenchmarkMedicalImage(input:BenchmarkImageInput):Pr
     cost+=second.costUsd;
     models.push(MODELS.GEMINI_3_PRO);
     const secondJson=second.error?null:parseVisionObservation(second.content);
-    if(secondJson){observation=secondJson;secondRead=true;}
+    if(secondJson){secondObservation=secondJson;observation=secondJson;secondRead=true;}
   }
   if(!observation)throw Error('No valid structured visual observation from permitted images');
   // The clinical interpretation sees factual observations, not pixels, to
   // avoid the observer instructing or biasing the second model's diagnosis.
   const reportCall=await callDiagnosticAgent({
     systemPrompt:buildReportInstruction(input.modality),
-    userContent:'STRUCTURED IMAGE FINDINGS (not verified diagnoses):\n'+JSON.stringify(prepareVisionDataForTextPrompt(observation))+
+    userContent:'STRUCTURED IMAGE FINDINGS (not verified diagnoses):\n'+JSON.stringify({
+      primaryObservation:firstJson ? prepareVisionDataForTextPrompt(firstJson) : null,
+      independentSecondObservation:secondObservation ? prepareVisionDataForTextPrompt(secondObservation) : null,
+      selectedObservation:prepareVisionDataForTextPrompt(observation)
+    })+
       '\nReturn the modality-appropriate clinical report. Do not claim clinical history or measurements absent from the source.',
     model:MODELS.SONNET,maxTokens:1800,reasoningEffort:'low'
   });
   cost+=reportCall.costUsd;
   if(reportCall.error || reportCall.content.trim().length<60)throw Error('Medical-image reporting stage failed');
   return {
-    modality:input.modality,observation,report:reportCall.content.trim(),
+    modality:input.modality,observation,primaryObservation:firstJson,
+    independentSecondObservation:secondObservation,report:reportCall.content.trim(),
     secondRead,secondReadReasons:routing.reasons,models,estimatedCostUsd:cost
   };
 }
