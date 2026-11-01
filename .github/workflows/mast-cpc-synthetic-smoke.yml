@@ -2,7 +2,7 @@ name: Doctor Opus CPC-like synthetic two-case cost-guarded smoke
 on:
   push:
     branches: [feat/mast-consilium-adapter]
-    paths: ['.github/workflows/mast-cpc-synthetic-smoke.yml']
+    paths: ['.github/workflows/mast-cpc-synthetic-smoke.yml', 'benchmark/vitest.live.config.ts', 'benchmark/lib/benchmark/mast.cpc.synthetic.smoke.live.test.ts']
   workflow_dispatch:
 permissions:
   contents: read
