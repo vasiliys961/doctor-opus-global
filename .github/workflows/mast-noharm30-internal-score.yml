@@ -1,0 +1,79 @@
+name: MAST NOHARM 30-case internal rubric scoring via OpenRouter Gemini
+# Original NOHARM prompts, rules, grading algorithm, alternate OpenRouter route.
+# Internal result; not a claim of official MAST judge or leaderboard parity.
+on:
+  workflow_dispatch:
+    inputs:
+      inference_run:
+        description: Completed Doctor Opus full-system NOHARM run ID
+        required: true
+        default: '41237938481'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  internal-scorer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MAST_OPENROUTER_JUDGE_CAP_USD: '3'
+      MAST_JUDGE_LEDGER: source-results/judge-cost.jsonl
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify 30 actual multiagent consilium answers before spending on judging
+        run: |
+          mkdir -p source-results
+          gh run download "${{ inputs.inference_run }}" --repo "${{ github.repository }}" --name doctor-opus-full-consilium-noharm30 --dir source-results
+          python - <<'PY'
+          import json,pathlib
+          report=json.loads(pathlib.Path('source-results/summary.json').read_text())
+          assert report['completed']==30 and report['failed']==0 and report['officialScoreReady'],report
+          rows=[json.loads(x) for x in pathlib.Path('source-results/doctor-opus-consilium.jsonl').read_text().splitlines() if x.strip()]
+          assert len(rows)==30 and len({x['id'] for x in rows})==30
+          print("Full-system source validated. All 30 cases will be graded.")
+          PY
+      - name: Install pinned original MAST scoring algorithm
+        run: |
+          git clone -q https://github.com/ARISENetwork/mast.git mast-reference
+          git -C mast-reference checkout -q 57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          python -m pip install -q -r mast-reference/benchmarks/donoharm/requirements.txt
+          cp benchmark/scripts/noharm-openrouter-judge-transport.py mast-reference/benchmarks/donoharm/judge/gemini_sdk.py
+          mkdir -p mast-reference/results/raw/donoharm/default
+          cp source-results/doctor-opus-consilium.jsonl mast-reference/results/raw/donoharm/default/doctor-opus-consilium-v1-openrouter-judge.jsonl
+      - name: Judge the full system with measured API costs
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          cat > config/models/doctor-opus-consilium-v1-openrouter-judge.yaml <<'YAML'
+          model:
+            name: doctor-opus-consilium-v1-openrouter-judge
+            platform: openrouter
+            model_id: doctor-opus-consilium
+          YAML
+          python score.py --model-config config/models/doctor-opus-consilium-v1-openrouter-judge.yaml --benchmark-config config/benchmark.yaml --k 1 --threads 1
+      - name: Clinical quality and harmful action review
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          python ../../../benchmark/scripts/noharm-clinical-report.py \
+            ../../results/raw/donoharm/default/doctor-opus-consilium-v1-openrouter-judge_judged.jsonl \
+            dataset/rubrics \
+            ../../../source-results/ledger.jsonl \
+            ../../../source-results/error-audit.md
+      - name: Upload detailed scores and clinical error analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-30case-internal-score-and-audit
+          path: |
+            mast-reference/results/scores/donoharm/default/doctor-opus-consilium-v1-openrouter-judge.csv
+            mast-reference/results/raw/donoharm/default/doctor-opus-consilium-v1-openrouter-judge_judged.jsonl
+            source-results/judge-cost.jsonl
+            source-results/summary.json
+            source-results/ledger.jsonl
+            source-results/error-audit.md
+          retention-days: 21
+          if-no-files-found: warn

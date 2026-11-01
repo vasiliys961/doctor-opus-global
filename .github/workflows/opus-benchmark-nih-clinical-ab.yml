@@ -1,0 +1,51 @@
+name: Opus Benchmark NIH guideline embeddings clinical A-B
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/opus-benchmark-nih-clinical-ab.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  whole-consilium-synthetic-ab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        working-directory: benchmark
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+      NIH_RAG_INDEX_PATH: rag-index-guidelines/index.jsonl
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retrieve licensed NIH index, not a benchmark case
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 41278510617 --repo "${{ github.repository }}" --name opus-benchmark-nih-guidelines-e5-cpu --dir .
+          test -s rag-index-guidelines/index.jsonl
+      - name: Restore E5 model weights without redownloading
+        uses: actions/cache@v4
+        with:
+          path: benchmark/rag/.cache
+          key: benchmark-e5-small-v1
+      - name: Install full-consilium and optional CPU embedding runtimes
+        run: |
+          npm install --no-audit --no-fund
+          npm install --prefix rag --no-audit --no-fund
+      - name: A/B live inference with and without NIH references on two synthetic scenarios
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.nih.paired.live.test.ts --testTimeout=5400000
+      - name: Save exact model answers, latency, failures and usage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opus-benchmark-nih-guidelines-consilium-ab
+          path: benchmark/internal-results/nih-rag-clinical-smoke/
+          retention-days: 21
+          if-no-files-found: warn

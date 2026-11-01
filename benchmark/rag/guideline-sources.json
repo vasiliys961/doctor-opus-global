@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "sourcePolicy": "Federal US government medical guidance, public-domain text portions only; exclude third-party material, figures, tables with third-party attribution and nonmedical navigation. Research use; retain source URL, publisher, retrieval date and document hash.",
+  "docs": [
+    {
+      "id": "cdc-sti-guidelines-2021",
+      "title": "CDC Sexually Transmitted Infections Treatment Guidelines 2021",
+      "url": "https://www.cdc.gov/mmwr/volumes/70/rr/rr7004a1.htm",
+      "publisher": "CDC",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "infectious-disease",
+      "published": "2021-07-23",
+      "expectedKeyword": "Sexually Transmitted Infections",
+      "enabled": false,
+      "deferredReason": "CDC server responds HTTP 403 to GitHub Actions runner; no attempted bypass or unlicensed mirror"
+    },
+    {
+      "id": "cdc-antibiotics-adults",
+      "title": "CDC Outpatient Clinical Care for Adults",
+      "url": "https://www.cdc.gov/antibiotic-use/hcp/clinical-care/adult-outpatient.html",
+      "publisher": "CDC",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "antimicrobial-stewardship",
+      "expectedKeyword": "Adult",
+      "enabled": false,
+      "deferredReason": "CDC server responds HTTP 403 to GitHub Actions runner; no attempted bypass or unlicensed mirror"
+    },
+    {
+      "id": "cdc-antibiotics-pediatrics",
+      "title": "CDC Outpatient Clinical Care for Pediatric Populations",
+      "url": "https://www.cdc.gov/antibiotic-use/hcp/clinical-care/pediatric-outpatient.html",
+      "publisher": "CDC",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "pediatrics",
+      "expectedKeyword": "Pediatric",
+      "enabled": false,
+      "deferredReason": "CDC server responds HTTP 403 to GitHub Actions runner; no attempted bypass or unlicensed mirror"
+    },
+    {
+      "id": "nih-hiv-pneumocystis",
+      "title": "NIH HIV Opportunistic Infections: Pneumocystis Pneumonia",
+      "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-opportunistic-infections/pneumocystis",
+      "publisher": "NIH ClinicalInfo",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "pulmonology-infectious-disease",
+      "expectedKeyword": "Pneumocystis"
+    },
+    {
+      "id": "nih-hiv-oi-introduction",
+      "title": "NIH HIV Opportunistic Infections: Introduction",
+      "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-opportunistic-infections/introduction",
+      "publisher": "NIH ClinicalInfo",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "clinical-guidelines",
+      "expectedKeyword": "Introduction"
+    },
+    {
+      "id": "nih-hiv-oi-changes",
+      "title": "NIH HIV Opportunistic Infections: Updated Recommendations",
+      "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-opportunistic-infections/whats-new",
+      "publisher": "NIH ClinicalInfo",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "guideline-updates",
+      "expectedKeyword": "Guidelines"
+    },
+    {
+      "id": "nih-hiv-community-pneumonia",
+      "title": "NIH HIV OI: Community-Acquired Bacterial Pneumonia",
+      "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-opportunistic-infections/community-acquired",
+      "publisher": "NIH ClinicalInfo",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "pulmonology-infectious-disease",
+      "expectedKeyword": "Community-Acquired"
+    },
+    {
+      "id": "nih-hiv-toxoplasmosis",
+      "title": "NIH HIV OI: Toxoplasma Encephalitis",
+      "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-opportunistic-infections/toxoplasmosis",
+      "publisher": "NIH ClinicalInfo",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "neurology-infectious-disease",
+      "expectedKeyword": "Toxoplasmosis"
+    },
+    {
+      "id": "nih-hiv-mac",
+      "title": "NIH HIV OI: Disseminated Mycobacterium avium Complex",
+      "url": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-opportunistic-infections/disseminated",
+      "publisher": "NIH ClinicalInfo",
+      "license": "PUBLIC-DOMAIN",
+      "domain": "infectious-disease",
+      "expectedKeyword": "Mycobacterium"
+    }
+  ]
+}

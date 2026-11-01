@@ -1,0 +1,65 @@
+name: Opus Benchmark branch-only NIH clinical guidelines indexing speed
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/opus-benchmark-guidelines-cpu.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-guidelines-index-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install guideline extraction dependencies
+        run: python -m pip install -q requests beautifulsoup4
+      - name: Download and verify public-domain CDC/NIH text
+        run: |
+          python benchmark/rag/fetch-guidelines.py --sources benchmark/rag/guideline-sources.json --output benchmark/rag/data/guidelines-public.jsonl
+          node benchmark/rag/indexer.mjs --input benchmark/rag/data/guidelines-public.jsonl --output benchmark/rag-index-guidelines/index.jsonl --dry-run
+      - name: Restore parent-compatible embedding model cached weights
+        uses: actions/cache@v4
+        with:
+          path: benchmark/rag/.cache
+          key: benchmark-e5-small-v1
+      - name: Install isolated optional E5 runtime (does not touch base benchmark)
+        run: npm install --prefix benchmark/rag --no-audit --no-fund
+      - name: Measure wall time and CPU embedding throughput on real guideline text
+        run: |
+          python - <<'PY'
+          import json
+          p='benchmark/rag/data/guidelines-public.jsonl.provenance.json'
+          d=json.load(open(p))
+          print('SOURCE_CHARS',d['totalChars'],'SOURCE_SECTIONS',d['documents'])
+          PY
+          START=$(date +%s)
+          node benchmark/rag/indexer.mjs --input benchmark/rag/data/guidelines-public.jsonl --output benchmark/rag-index-guidelines/index.jsonl --batch 8
+          END=$(date +%s)
+          RUNTIME=$((END-START))
+          node -e "const s=require('./benchmark/rag-index-guidelines/index.jsonl.manifest.json'); console.log('BENCHMARK_GUIDELINES_FIRST_PASS '+JSON.stringify({...s,wallSeconds:Number(process.argv[1]),embeddingChunksPerSecond:s.newEmbeddings/Math.max(Number(process.argv[1]),1)}))" "$RUNTIME"
+      - name: Verify zero repeat embeddings on unchanged clinical guidelines
+        run: |
+          START=$(date +%s)
+          node benchmark/rag/indexer.mjs --input benchmark/rag/data/guidelines-public.jsonl --output benchmark/rag-index-guidelines/index.jsonl --batch 8
+          END=$(date +%s)
+          node -e "const s=require('./benchmark/rag-index-guidelines/index.jsonl.manifest.json');if(s.newEmbeddings!==0||s.reused!==s.chunks)process.exit(3); console.log('BENCHMARK_GUIDELINES_CACHE_PASS '+JSON.stringify({...s,wallSeconds:Number(process.argv[1])}))" "$((END-START))"
+      - name: Save sources, license metadata, index, and runtime evidence without committing to main
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opus-benchmark-nih-guidelines-e5-cpu
+          path: |
+            benchmark/rag/data/guidelines-public.jsonl
+            benchmark/rag/data/guidelines-public.jsonl.provenance.json
+            benchmark/rag-index-guidelines/
+          retention-days: 21
+          if-no-files-found: warn

@@ -1,0 +1,81 @@
+name: MAST official NOHARM judge for Doctor Opus (opt-in)
+# Requires a separate GEMINI_API_KEY because MAST's scorer calls Google directly.
+# Not auto-started: charges Gemini independently of OpenRouter's account.
+on:
+  workflow_dispatch:
+    inputs:
+      inference_run:
+        description: Completed full-consilium inference GitHub Actions run ID
+        required: true
+        default: '41237938481'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  score-official:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify judge credential without exposing secret
+        run: |
+          test -n "$GEMINI_API_KEY" || { echo 'Official MAST two-stage judge needs a Google GEMINI_API_KEY secret'; exit 2; }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Clone pinned official MAST scorer
+        run: |
+          git clone -q https://github.com/ARISENetwork/mast.git mast-reference
+          git -C mast-reference checkout -q 57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          python -m pip install -q -r mast-reference/benchmarks/donoharm/requirements.txt
+      - name: Fetch complete answers from earlier full-system run
+        run: |
+          mkdir -p source-results
+          gh run download "${{ inputs.inference_run }}" --repo "${{ github.repository }}" --name doctor-opus-full-consilium-noharm30 --dir source-results
+          python - <<'PY'
+          import json,pathlib
+          p=pathlib.Path('source-results/summary.json')
+          s=json.loads(p.read_text())
+          assert s['completed']==30 and s['failed']==0 and s['officialScoreReady'],s
+          answers=pathlib.Path('source-results/doctor-opus-consilium.jsonl')
+          rows=[json.loads(x) for x in answers.read_text().splitlines() if x.strip()]
+          assert len(rows)==30 and len({(x['id'],x['trial']) for x in rows})==30
+          target=pathlib.Path('mast-reference/results/raw/donoharm/default/doctor-opus-consilium-v1.jsonl')
+          target.parent.mkdir(parents=True,exist_ok=True)
+          target.write_text(answers.read_text())
+          print('Scoring 30 actual full-consilium cases; no responses sent to generating model')
+          PY
+      - name: Score with original two-stage Gemini judge (k=1)
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          cat > config/models/doctor-opus-consilium-v1.yaml <<'YAML'
+          model:
+            name: doctor-opus-consilium-v1
+            platform: openrouter
+            model_id: doctor-opus-consilium-v1
+          YAML
+          python score.py --model-config config/models/doctor-opus-consilium-v1.yaml --benchmark-config config/benchmark.yaml --k 1 --threads 2
+      - name: Generate clinical error audit from official judged actions
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          python ../../../benchmark/scripts/noharm-clinical-report.py \
+            ../../results/raw/donoharm/default/doctor-opus-consilium-v1_judged.jsonl \
+            dataset/rubrics \
+            ../../../source-results/ledger.jsonl \
+            ../../../source-results/error-audit.md
+      - name: Preserve judged output, CSV and case logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-noharm30-official-judge
+          path: |
+            mast-reference/results/scores/donoharm/default/doctor-opus-consilium-v1.csv
+            mast-reference/results/raw/donoharm/default/doctor-opus-consilium-v1_judged.jsonl
+            source-results/summary.json
+            source-results/ledger.jsonl
+            source-results/error-audit.md
+          retention-days: 21
+          if-no-files-found: warn

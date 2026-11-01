@@ -1,0 +1,30 @@
+name: Standalone MAST build
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - 'benchmark/**'
+      - '.github/workflows/mast-standalone.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install standalone dependencies
+        working-directory: benchmark
+        run: npm install --no-audit --no-fund
+      - name: Typecheck standalone app
+        working-directory: benchmark
+        run: npx tsc --noEmit
+      - name: Unit tests
+        working-directory: benchmark
+        run: npm test
+      - name: Build Next.js
+        working-directory: benchmark
+        run: npm run build

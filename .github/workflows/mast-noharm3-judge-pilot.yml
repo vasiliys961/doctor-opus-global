@@ -1,0 +1,67 @@
+name: NOHARM three prior consilium cases rubric score (OpenRouter judge pilot)
+# Uses ORIGINAL NOHARM match/review prompts and scoring code, alternate
+# OpenRouter Gemini transport: INTERNAL, NOT official Google-SDK judge parity.
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-noharm3-judge-pilot.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  self-score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MAST_OPENROUTER_JUDGE_CAP_USD: '1'
+      MAST_JUDGE_LEDGER: source-results/judge-cost.jsonl
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download original three full-consilium answers
+        run: |
+          mkdir -p source-results
+          gh run download 41233224457 --repo ${{ github.repository }} --name noharm-internal-pilot-3-baselines --dir source-results
+          test -s source-results/answers.jsonl
+      - name: Clone original benchmark/judge at pinned public source revision
+        run: |
+          git clone -q https://github.com/ARISENetwork/mast.git mast-reference
+          git -C mast-reference checkout -q 57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          python -m pip install -q -r mast-reference/benchmarks/donoharm/requirements.txt
+          cp benchmark/scripts/noharm-openrouter-judge-transport.py mast-reference/benchmarks/donoharm/judge/gemini_sdk.py
+      - name: Prepare response format and namespace
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          r=[json.loads(x) for x in pathlib.Path('source-results/answers.jsonl').read_text().splitlines() if x.strip()]
+          assert len(r)==3 and {x['id'] for x in r}=={'Card001','Endo009','GI002'}
+          out=pathlib.Path('mast-reference/results/raw/donoharm/default/doctor-opus-consilium-openrouter-judge-pilot.jsonl')
+          out.parent.mkdir(parents=True,exist_ok=True)
+          out.write_text('\n'.join(json.dumps({'id':x['id'],'trial':1,'response':x['response']}) for x in r)+'\n')
+          PY
+      - name: Score three complete system answers against original expert rubrics
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          cat > config/models/doctor-opus-consilium-openrouter-judge-pilot.yaml <<'YAML'
+          model:
+            name: doctor-opus-consilium-openrouter-judge-pilot
+            platform: openrouter
+            model_id: doctor-opus-consilium
+          YAML
+          python score.py --model-config config/models/doctor-opus-consilium-openrouter-judge-pilot.yaml --benchmark-config config/benchmark.yaml --k 1 --cases Card001,Endo009,GI002 --threads 1
+      - name: Save pilot judge output and measured spending
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-noharm3-rubric-pilot
+          path: |
+            mast-reference/results/scores/donoharm/default/doctor-opus-consilium-openrouter-judge-pilot.csv
+            mast-reference/results/raw/donoharm/default/doctor-opus-consilium-openrouter-judge-pilot_judged.jsonl
+            source-results/judge-cost.jsonl
+          retention-days: 14
+          if-no-files-found: warn

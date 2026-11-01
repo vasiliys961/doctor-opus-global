@@ -1,0 +1,32 @@
+name: MAST NOHARM private 3-case budget pilot
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-internal-pilot.yml']
+  workflow_dispatch:
+jobs:
+  private-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Official baseline prompts / real Opus / actual billing
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.pilot.live.test.ts --testTimeout=2400000
+      - name: Upload private pilot outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: noharm-internal-pilot-3-baselines
+          path: benchmark/internal-results/noharm-pilot/
+          retention-days: 7
+          if-no-files-found: warn

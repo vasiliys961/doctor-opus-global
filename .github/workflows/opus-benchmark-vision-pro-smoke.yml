@@ -1,0 +1,33 @@
+name: Opus Benchmark synthetic medical-vision model availability smoke
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/opus-benchmark-vision-pro-smoke.yml']
+permissions:
+  contents: read
+jobs:
+  vision-providers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install tiny synthetic vision fixtures
+        run: python -m pip install -q pillow requests
+      - name: Test real image API from Gemini Flash, Gemini Pro, Qwen
+        working-directory: benchmark
+        run: python scripts/vision-model-smoke.py
+      - name: Preserve provider responses and actual billing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opus-benchmark-three-vision-providers-smoke
+          path: benchmark/internal-results/vision-model-smoke/
+          retention-days: 14
+          if-no-files-found: warn

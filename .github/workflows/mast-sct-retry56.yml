@@ -1,0 +1,32 @@
+name: MAST SCT single failed case retry
+# Rerun after registering the test in Vitest
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-sct-retry56.yml']
+  workflow_dispatch:
+jobs:
+  retry-one:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Retry only SCT case 56 without re-running full suite
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.sct.retry56.live.test.ts --testTimeout=180000
+      - name: Save result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-sct-retry-56
+          path: benchmark/internal-results/sct-retry-56/
+          retention-days: 7
+          if-no-files-found: warn

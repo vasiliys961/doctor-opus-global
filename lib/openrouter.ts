@@ -11,6 +11,7 @@ import { isAnthropicModel, isGeoRestrictionStatus, isOpenAIGeoRestrictionError, 
 import { getValidatedOpusModel } from './validated-opus-model';
 import { canSwitchToNextLlmProvider, getLlmApiKey, getLlmChatCompletionsUrl, getLlmEndpointChain, postLlmChatCompletionsWithFallback } from './llm-provider';
 import { appendClinicalDraftDisclaimer } from './clinical-disclaimer';
+import { evaluateComplexVisionRouting } from './vision-complex-routing';
 
 const OPENROUTER_API_URL = getLlmChatCompletionsUrl();
 
@@ -27,7 +28,8 @@ export const MODELS = {
   HAIKU: 'anthropic/claude-haiku-4.5',                   // Claude Haiku 4.5
   LLAMA: 'meta-llama/llama-3.2-90b-vision-instruct',     // Резерв
   GEMINI_3_FLASH: 'google/gemini-3.8-flash',       // Gemini 3.8 Flash
-  GEMINI_3_PRO: 'google/gemini-3.8-flash',         // Secondary vision model (same as flash)
+  GEMINI_3_PRO: 'google/gemini-3.1-pro-preview',       // Experimental benchmark: distinct image escalation for difficult cases
+  QWEN_VISION: 'qwen/qwen3.5-397b-a17b',                // Opt-in comparator only, not automatic clinical override
   FABLE_5: 'anthropic/claude-fable-5.1',           // Claude Fable 5.1 — deep clinical reasoning
   FUGU_ULTRA: 'sakana/fugu-ultra',                       // Sakana Fugu Ultra — резервная модель без прямых мед. бенчмарков
 };
@@ -170,31 +172,9 @@ function extractRoutingMetadata(payload: any): RoutingMetadata {
 }
 
 function shouldUseProByRouting(modality: string, routing: RoutingMetadata): { escalate: boolean; reasons: string[] } {
-  const reasons: string[] = [];
-  const normalizedModality = (modality || '').toLowerCase();
-  const highRiskModalities = new Set(['ct', 'mri', 'histology', 'mammography']);
-  const forceProHighRisk = isTruthyEnv(process.env.SMART_ROUTING_FORCE_PRO_HIGH_RISK, true);
-
-  if (forceProHighRisk && highRiskModalities.has(normalizedModality)) {
-    reasons.push('high_risk_modality');
-  }
-  if (typeof routing.self_confidence === 'number' && routing.self_confidence < 0.75) {
-    reasons.push('low_self_confidence');
-  }
-  if (typeof routing.difficulty_level === 'number' && routing.difficulty_level >= 4) {
-    reasons.push('high_difficulty');
-  }
-  if (routing.image_quality === 'poor' || routing.image_quality === 'non_diagnostic') {
-    reasons.push('poor_image_quality');
-  }
-  if (routing.ambiguous_findings) {
-    reasons.push('ambiguous_findings');
-  }
-  if (routing.needs_second_read) {
-    reasons.push('second_read_requested');
-  }
-
-  return { escalate: reasons.length > 0, reasons };
+  return evaluateComplexVisionRouting(modality,routing,{
+    forceProHighRisk:isTruthyEnv(process.env.SMART_ROUTING_FORCE_PRO_HIGH_RISK,false),
+  });
 }
 
 /**
@@ -605,7 +585,7 @@ export async function extractImageJSON(options: {
     throw new Error('No images were provided for JSON extraction');
   }
   
-  const smartRoutingEnabled = (options.enableSmartRouting ?? true) && isTruthyEnv(process.env.SMART_ROUTING_ENABLED, false);
+  const smartRoutingEnabled = (options.enableSmartRouting ?? true) && isTruthyEnv(process.env.SMART_ROUTING_ENABLED, true);
   const preferModel = options.preferModel || MODELS.GEMINI_3_FLASH;
 
   // Получаем детальные инструкции специалиста для этого типа исследования
