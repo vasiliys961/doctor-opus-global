@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/mast-original-xrv-cpu-proof.yml'
       - 'benchmark/scripts/xrv_nih_cpu_worker.py'
+      - 'benchmark/scripts/mast_xrv_cpu_10_requests.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -62,11 +63,37 @@ jobs:
           assert all(0<=v<=1 for v in d['scores'].values())
           print('ACTUAL ORIGINAL NIH CPU inference verified, elapsed_ms=',d['cpuElapsedMs'])
           PY
+      - name: Ten concurrent real CPU HTTP requests with bounded queue and source SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          export XRV_WORKER_TOKEN="$(openssl rand -hex 32)"
+          python benchmark/scripts/xrv_nih_cpu_worker.py \
+            --weights "/tmp/nih-xrv/${NIH_NAME}" --serve \
+            --host 127.0.0.1 --port 8765 >/tmp/nih-xrv-worker.log 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 25); do
+            if curl --silent --fail --max-time 2 \
+              --header "Authorization: Bearer ${XRV_WORKER_TOKEN}" \
+              http://127.0.0.1:8765/healthz >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          python benchmark/scripts/mast_xrv_cpu_10_requests.py \
+            --png /tmp/nih-xrv/public-source.png \
+            --output /tmp/nih-xrv/ten-parallel-summary.json
       - name: Upload no-PHI inference evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: original-nih-cpu-source-proof
-          path: /tmp/nih-xrv/source-nih-report.json
+          path: |
+            /tmp/nih-xrv/source-nih-report.json
+            /tmp/nih-xrv/ten-parallel-summary.json
           if-no-files-found: ignore
           retention-days: 7
