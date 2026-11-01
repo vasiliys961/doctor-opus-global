@@ -27,7 +27,7 @@ export async function POST(req:NextRequest):Promise<NextResponse>{
   const r=body as Record<string,unknown>;
   if(!['xray','ct','mri','ecg','dermatoscopy','ultrasound'].includes(String(r.modality)) || !Array.isArray(r.images))
     return NextResponse.json({error:'Unsupported modality or images'},{status:400,headers:{'Cache-Control':'no-store'}});
-  const input={modality:r.modality,images:r.images,allowSecondRead:r.allowSecondRead} as BenchmarkImageInput;
+  const input={modality:r.modality,images:r.images,allowSecondRead:r.allowSecondRead,examRegion:r.examRegion} as BenchmarkImageInput;
   try{
     validateVisionInput(input);
     // An internal, token-authenticated research endpoint. No request/response
