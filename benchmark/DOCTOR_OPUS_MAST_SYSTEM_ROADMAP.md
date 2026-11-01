@@ -155,3 +155,14 @@ See [current full cross-line evaluation report](results/2026-11-01-mast-coverage
 - **Agentic EHR-like tool simulation**: two fully synthetic scenarios. Gemini Flash 1/2 tasks, $0.01032, two malformed actions; Sonnet 5.5 2/2 tasks, $0.03087, zero format failures, 8.6–9.0s. **Not actual FHIR R4 EHR nor MedAgentBench/PhysicianBench**.
 - **Candidate debate model**: Fable was replaced with Claude Opus 5.5 as the DEFAULT for hypothesis/challenger/checklist in THIS contest branch only. Sonnet is fallback. Clinical one-case verification [run 41294260683](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41294260683) initiated; outcome must be checked before claiming competitiveness.
 - The mature parent `main` remains untouched. Keep synthetic and image research smoke distinct from independent official MAST scores.
+
+
+## Implementation checkpoint — 2026-11-01 (P0 action semantics)
+
+- [x] Added **review-only** deterministic action disposition preflight at [`lib/benchmark/clinical-action-policy.ts`](lib/benchmark/clinical-action-policy.ts), with [Vitest regression fixtures](lib/benchmark/clinical-action-policy.test.ts). Created in contest branch; no parent `main` or production route changes.
+- [ ] Run automated tests in CI; verify errors, fix as needed. Committing tests does not imply they passed.
+- [ ] Hook action tags to full-consilium public NOHARM evidence capture, without changing model outputs or private-data retention.
+- [ ] Implement authoritative FDA-label contraindication checking and conditional-time obligations; current lexical tags are **not** clinical validation.
+- [ ] Compare action extraction with held-out adjudicated cases and original NOHARM scorer before promoting it.
+
+[Implementation and limitations](results/2026-11-01-p0-action-policy-implementation.md).
