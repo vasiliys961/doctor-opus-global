@@ -17,12 +17,27 @@ import {importRadiologySourceEvidence} from './radiology-source-evidence';
 import type {EvidenceItem} from './source-bound-evidence';
 import {arbitrateSourceEvidence} from './source-bound-evidence';
 import {formatMastAnswer} from './mast';
+import {analyzeBenchmarkMedicalImage,validateVisionInput} from './medical-vision';
+import type {BenchmarkImageInput} from './medical-vision';
+import {runNonBlockingCpuPair} from './nonblocking-cpu-detector';
+import {planCpuDetector} from './cpu-only-detector-policy';
+import type {CpuReadiness} from './cpu-only-detector-policy';
+import {validatedOriginalXrvScores} from './lightweight-xray-cpu';
 
 export type ClinicalStudy=
  | {kind:'ecg-opus';sourceId:string;input:ECGImageInput}
  | {kind:'comparison';sourceId:string;input:ComparisonInput}
- | {kind:'radiology';sourceId:string;nativeEvidence:unknown};
+ | {kind:'radiology';sourceId:string;nativeEvidence:unknown}
+ | {kind:'chest-xray';sourceId:string;input:BenchmarkImageInput};
 
+/** External original CPU host is injected only by trusted server code.
+ * Never read a client-submitted URL or provision weights at request time.
+ */
+export type CpuXrayExecution={
+ readiness:CpuReadiness;
+ execute:(input:BenchmarkImageInput,signal:AbortSignal)=>Promise<unknown>;
+};
+export type UnifiedClinicalOptions={cpuXray?:CpuXrayExecution};
 export type UnifiedClinicalRequest={
  caseText:string;
  studies:ClinicalStudy[];
@@ -56,12 +71,17 @@ export function validateUnifiedClinicalRequest(input:UnifiedClinicalRequest):voi
   if(!item||!SOURCE.test(item.sourceId)||seen.has(item.sourceId))
    throw Error('Missing or duplicate imaging source');
   seen.add(item.sourceId);
-  if(!['ecg-opus','comparison','radiology'].includes(item.kind))
+  if(!['ecg-opus','comparison','radiology','chest-xray'].includes(item.kind))
    throw Error('Unsupported specialist module');
   if(item.kind==='ecg-opus'&&!item.input?.image)
    throw Error('Actual ECG image is required');
   if(item.kind==='comparison'&&!item.input?.frames)
    throw Error('Original comparative images required');
+  if(item.kind==='chest-xray'){
+   if(!item.input||item.input.modality!=='xray')throw Error('Chest X-ray source required');
+   validateVisionInput(item.input);
+   if(item.input.images.length!==1)throw Error('Exactly one original chest X-ray for CPU pilot');
+  }
   if(item.kind==='radiology'&&!item.nativeEvidence)
    throw Error('Native radiology evidence required');
  }
@@ -89,7 +109,9 @@ export function buildSourceClinicalContext(
  }).join('\n\n-----\n\n');
 }
 
-export async function runUnifiedClinicalChat(input:UnifiedClinicalRequest):Promise<UnifiedClinicalResult>{
+export async function runUnifiedClinicalChat(
+ input:UnifiedClinicalRequest,options:UnifiedClinicalOptions={}
+):Promise<UnifiedClinicalResult>{
  validateUnifiedClinicalRequest(input);
  const summaries:UnifiedClinicalResult['sourceSummaries']=[];
  const reports:Array<{sourceId:string;kind:string;report:string;limitations:string[]}>=[];
@@ -117,6 +139,44 @@ export async function runUnifiedClinicalChat(input:UnifiedClinicalRequest):Promi
    evidence.push({id:'compare:'+study.sourceId,sourceId:study.sourceId,modality:study.input.modality,
     bodyRegion:study.input.examRegion||'unspecified',finding:bounded(result.report,4600),
     status:'inferred',coverage:'partial',model:'source-bound Gemini+Opus comparative',limitations});
+  }else if(study.kind==='chest-xray'){
+   // Fast model-based visual observation starts immediately. The external,
+   // source-verified CPU original model runs alongside it, never in series.
+   // The specialist consilium starts promptly even if the CPU model hangs.
+   const plan=planCpuDetector('chest-xray',options.cpuXray?.readiness);
+   const cpu=plan.execute&&options.cpuXray
+     ?(signal:AbortSignal)=>options.cpuXray!.execute(study.input,signal).then(
+       report=>validatedOriginalXrvScores(study.input,report))
+     :undefined;
+   const pair=await runNonBlockingCpuPair(
+     ()=>analyzeBenchmarkMedicalImage(study.input),cpu,
+     {detectorMaxMs:8000,afterVisionGraceMs:1500}
+   );
+   const limitations=[
+    'Only submitted radiograph reviewed; other views or comparisons not assessed',
+    'Image reading is model inference without independent physician confirmation',
+    'Optional original CPU model does not establish pathology or negative findings',
+    'GPU is prohibited; no automatic model download or paid CPU/GPU fallback'
+   ];
+   const status=pair.detector.state;
+   const sourceReport=pair.visual.report;
+   const detectorDetail=pair.detector.state==='ready'
+    ?'CPU original six-head scores (UNCALIBRATED, NOT DIAGNOSES): '+
+      JSON.stringify(pair.detector.value.unverifiedScores)
+    :'CPU detector '+status+': not assessed. Continue based on independent visual report, not a negative result.';
+   const report=bounded(sourceReport,8000)+'\n'+detectorDetail;
+   summaries.push({sourceId:study.sourceId,kind:study.kind,status:'unverified',limitations});
+   reports.push({sourceId:study.sourceId,kind:study.kind,report,limitations});
+   evidence.push({id:'vision:'+study.sourceId,sourceId:study.sourceId,modality:'xray',
+    bodyRegion:'chest',finding:bounded(sourceReport,4600),status:'inferred',
+    coverage:'partial',model:pair.visual.models.join('+'),limitations});
+   if(pair.detector.state==='ready'){
+    evidence.push({id:'xrv:'+study.sourceId,sourceId:study.sourceId,modality:'xray',
+     bodyRegion:'chest',finding:'UNVERIFIED ORIGINAL CPU SCORES: '+
+        JSON.stringify(pair.detector.value.unverifiedScores),
+     status:'inferred',coverage:'partial',model:'nih-densenet121-cpu',limitations:[
+      pair.detector.value.warning,'Not an expert-confirmed finding']});
+   }
   }else{
    const result=importRadiologySourceEvidence(study.sourceId,study.nativeEvidence);
    const limitations=[...result.limitations,
