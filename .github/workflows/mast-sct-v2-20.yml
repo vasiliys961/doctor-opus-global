@@ -1,0 +1,36 @@
+name: MAST SCT prompt V2 20-case paired-to-archive pilot
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-sct-v2-20.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: SCT V2 on 20 preselected OPEN cases, actual provider billing
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.sct.promptv2.live.test.ts --testTimeout=1800000
+      - name: Retain blind answers, scores and billing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-sct-v2-20-open
+          path: benchmark/internal-results/sct-prompt-v2/
+          retention-days: 21
+          if-no-files-found: warn
