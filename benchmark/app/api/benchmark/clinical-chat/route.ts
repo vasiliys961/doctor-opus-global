@@ -5,6 +5,7 @@ import {NextRequest,NextResponse} from 'next/server';
 import {timingSafeEqual} from 'node:crypto';
 import {runUnifiedClinicalChat,validateUnifiedClinicalRequest} from '../../../../lib/benchmark/unified-clinical-chat';
 import type {UnifiedClinicalRequest} from '../../../../lib/benchmark/unified-clinical-chat';
+import {configuredCpuXrayFromEnv} from '../../../../lib/benchmark/xrv-cpu-worker-client';
 
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
@@ -29,7 +30,7 @@ export async function POST(req:NextRequest):Promise<NextResponse>{
   validateUnifiedClinicalRequest(body as UnifiedClinicalRequest);
  }catch{return NextResponse.json({error:'Invalid source study or question'},{status:422,headers})}
  try{
-  const result=await runUnifiedClinicalChat(body as UnifiedClinicalRequest);
+  const result=await runUnifiedClinicalChat(body as UnifiedClinicalRequest,{cpuXray:configuredCpuXrayFromEnv()});
   return NextResponse.json(result,{headers});
  }catch{
   // The endpoint never echoes original patient text, image bytes, models,
