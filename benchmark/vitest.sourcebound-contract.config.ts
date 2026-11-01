@@ -1,3 +1,3 @@
 import {defineConfig} from 'vitest/config';
 import path from 'node:path';
-export default defineConfig({resolve:{alias:{'@':path.resolve(__dirname,'.')}},test:{include:['lib/benchmark/source-bound-integration.test.ts'],environment:'node'}});
+export default defineConfig({resolve:{alias:{'@':path.resolve(__dirname,'.')}},test:{include:['lib/benchmark/source-bound-integration.test.ts','lib/benchmark/ecg-opus-image.test.ts'],environment:'node'}});
