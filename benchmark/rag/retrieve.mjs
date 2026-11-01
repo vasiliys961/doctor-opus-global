@@ -53,6 +53,7 @@ export function renderEvidence(hits, medNames, maxChar=3700){
   const sections=hits.map((row,i)=>{
     const content=String(row.text).slice(0,1000);
     return '['+(i+1)+'] '+row.title+' | '+(row.section||'label')+
+      (row.effectiveDate ? ' | label date '+row.effectiveDate : '')+
       ' | '+row.sourceUrl+'\n'+content;
   });
   return ('FDA LABEL REFERENCE (retrieved for explicitly named medications: '+medNames.join(', ')+')\n'+
