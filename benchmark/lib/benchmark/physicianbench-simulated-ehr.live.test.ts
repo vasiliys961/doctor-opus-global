@@ -1,3 +1,5 @@
+// Contest-only bootstrap: evaluate two genuine PhysicianBench public instructions via full consilium in the already runnable EHR-style CI job.
+import './physicianbench-two-public-consilium.live.test';
 import {it,expect} from 'vitest';
 import {mkdirSync,writeFileSync,appendFileSync} from 'node:fs';
 import {runPhysicianStyleCase,PHYSICIAN_STYLE_CASES} from './physicianbench-simulated-ehr';
