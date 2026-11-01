@@ -1,0 +1,26 @@
+name: MAST Redivis approved-dataset access inventory
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-redivis-dataset-access.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  redivis-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      REDIVIS_API_TOKEN: ${{ secrets.REDIVIS_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install official Redivis API client
+        run: python -m pip install -q redivis
+      - name: List dataset overview access only (zero patient or image downloads)
+        run: python benchmark/scripts/redivis_dataset_access_inventory.py
