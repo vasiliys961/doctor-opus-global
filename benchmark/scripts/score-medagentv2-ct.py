@@ -16,6 +16,11 @@ rows=[json.loads(x) for x in (out/'answers.jsonl').read_text().splitlines() if x
 scores=[]
 for row in rows:
     history=[SimpleNamespace(**i) for i in row['history']]
+    # Upstream new_refsol.extract_posts uses idx < len(history), not idx < len(history)-1.
+    # Since "POST request accepted" itself contains the token POST, the author's
+    # last event hits an off-by-one IndexError. Append a no-op user boundary event;
+    # this does NOT alter any POST content, accepted status, or clinical decision.
+    history.append(SimpleNamespace(role='user',content='[end of tool transcript]'))
     result=SimpleNamespace(result='[]',history=history)
     passed=bool(task1(by_id[row['taskId']],result,'http://127.0.0.1:8080/fhir/'))
     scores.append({'id':row['taskId'],'passed':passed,'actions':row['posts'],
