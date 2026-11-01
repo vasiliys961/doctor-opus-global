@@ -6,6 +6,7 @@
  */
 import {callDiagnosticAgent} from '../diagnostics/llm-client';
 import {MODELS} from '../openrouter';
+import {matchOfficialDrugLabel,formatOfficialDrugLabelEvidence} from './drug-label-evidence';
 
 export type SafetySignal='severe_drug_reaction'|'anticoagulation_bleeding'|
  'dangerous_electrolyte'|'renal_drug_risk'|'pregnancy_drug_risk';
@@ -17,6 +18,7 @@ export interface SafetyAudit {
  rewritten:boolean;
  response:string;
  costUsd:number;
+ sourceLabels:string[];
 }
 const safe=(s:string)=>s.toLowerCase();
 export function detectSafetySignals(caseText:string):SafetySignal[]{
@@ -58,7 +60,9 @@ export async function auditManagementSafety(args:{
 }):Promise<SafetyAudit>{
  const signals=detectSafetySignals(args.caseText);
  const mode=args.mode||requestedSafetyMode();
- const base:SafetyAudit={triggered:signals,verdict:'pass',issues:[],rewritten:false,response:args.response,costUsd:0};
+ const labels=signals.includes('severe_drug_reaction')?matchOfficialDrugLabel(args.caseText):[];
+ const sourceLabels=labels.map(label=>label.drug+':'+label.event+':'+label.severity);
+ const base:SafetyAudit={triggered:signals,verdict:'pass',issues:[],rewritten:false,response:args.response,costUsd:0,sourceLabels};
  if(mode==='off'||signals.length===0)return base;
  const x=await callDiagnosticAgent({
   model:MODELS.SONNET,maxTokens:2200,reasoningEffort:'low',
@@ -78,7 +82,9 @@ export async function auditManagementSafety(args:{
   ].join('\n'),
   userContent:'SIGNALS (not diagnoses): '+signals.join(', ')+
     '\nORIGINAL CASE:\n'+args.caseText.slice(0,14000)+
-    '\nREFERENCES (may be absent, not patient facts):\n'+(args.references||'(none supplied)')+
+    '\nINDEPENDENT VERIFIED DRUG-LABEL SOURCES (not patient data):\n'+
+    (labels.length?formatOfficialDrugLabelEvidence(labels):'(none matched)')+
+    '\nADDITIONAL REFERENCES (may be absent):\n'+(args.references||'(none supplied)')+
     '\nUNVERIFIED DRAFT MANAGEMENT:\n'+args.response.slice(0,13000)
  });
  if(x.error)return {...base,verdict:'unavailable',issues:['independent safety reviewer provider unavailable'],costUsd:x.costUsd};
@@ -87,5 +93,5 @@ export async function auditManagementSafety(args:{
  const rewrite=mode==='enforce' && result.verdict==='revise'&&
     result.issues.length>0&&result.revisedAnswer.trim().length>=180;
  return {triggered:signals,verdict:result.verdict,issues:result.issues,rewritten:rewrite,
-  response:rewrite?result.revisedAnswer.trim():args.response,costUsd:x.costUsd};
+  response:rewrite?result.revisedAnswer.trim():args.response,costUsd:x.costUsd,sourceLabels};
 }
