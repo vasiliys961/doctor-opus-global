@@ -55,3 +55,47 @@ Reference: [official MAST benchmarks](https://www.arise-ai.org/mast/benchmarks) 
 ### Public dermoscopy — completed research smoke
 - [GitHub run 41294018180](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41294018180): CC BY-SA 4.0 photos, 2/2 image-to-report completed, cost **$0.0589065**. Benign nevus 13.396 s, Flash-only, report favored a benign melanocytic nevus. Melanoma-source photo 27.807 s, Flash + conditional Pro; report listed amelanotic/hypomelanotic melanoma as a crucial diagnosis not to miss, acknowledged limited image quality and suggested low threshold for biopsy. **No official histopathology-grade performance estimate**, no DDI/MIDAS access. Attributions: Philipp Tschandl and Dermanonymous (Wikimedia Commons).
 - Candidate Claude Opus 5.5 replaced Fable only in contest debate configuration: live one-case SDBench synthetic diagnosis [workflow 41294260683](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41294260683). **Started; score, latency and cost must not be claimed until run is complete**.
+
+## Verified genuine-source follow-up — 2026-11-01
+
+This section supersedes earlier *"not yet official dataset"* notes where an authentic public source was subsequently obtained. **All measurements here are development pilots, not an independently submitted MAST score.**
+
+### Claude Opus 5.5 vs Sonnet 5.5 (CPC-like)
+- [Opus 5.5 run 41294260683](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41294260683) on public SDBench synthetic case 1: 128.767 seconds, $0.51606, 0 provider errors, correct top diagnosis: adrenal pheochromocytoma. The hereditary RET component was **not confirmed** from the vignette alone.
+- The same synthetic case under [direct Sonnet 5.5 run 41290919053](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41290919053): 114.199 seconds, $0.38668, 0 provider errors, correct top diagnosis. **Do not claim an Opus accuracy advantage based on this single case.** Opus consumed ~$0.12938 more, with ~14.6s more latency.
+- Original NEJM CPC-Bench clinical scoring still **unavailable** without appropriately licensed data; the Microsoft SDBench authors themselves state synthetic cases must not be used for true diagnostic performance reporting.
+
+### AUTHENTIC ReXrank IU X-Ray dataset — first two original studies
+- The actual test IDs `CXR3030_IM-1405` and `CXR3673_IM-1828` were selected from `rajpurkarlab/ReXrank` @ `0a18a41e580992ac7cd32a8a9463009654f0d390`, with original two-view images from IU Open-i noncommercial mirror `dz-osamu/IU-Xray` @ `ba02a24d9f206782c2b1ec8ae24e4009022ae1ff`. Reference reports were hidden during inference. No source image data was uploaded as an artifact.
+- [Single-read test 41300901691](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41300901691): 2/2 reports, original 4 images, $0.04226, 13.804 and 16.207 seconds; both include Findings/Impression. Descriptive lexical token F1 vs original reports: 0.1429 and 0.1489; **this is NOT a clinical accuracy metric or official ReXrank score**.
+- [Independent Gemini 3.1 Pro second-read 41301345527](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41301345527): 2/2 reports, $0.06616, 15.132 and 21.245 seconds; descriptive lexical F1: 0.1719 and 0.1932. The second-read report on the left-midlung opacity explicitly discusses nodule/mass vs consolidation, viewer disagreement and follow-up CT; baseline emphasized infection, with tumor concern only implicit in follow-up.
+- Watch the NORMAL reference: both passes also reported a right calcified hilar focus absent from the short reference. This is **a possible extra finding**, not automatically a hallucination without physician image adjudication. Do not label true-positive/false-positive on text alone.
+- Formal clinical-radiology metrics GREEN, RadGraph, CRIMSON and separate radiologist adjudication remain outstanding.
+
+### Genuine MedAgentBench v2 data AND authors' disposable FHIR test hospital
+- Source: `ericoericochen/medagentbenchv2` @ `46c93f39bd8679af35790eaaa5dd41bc067024a0`, Docker `jyxsu6/medagentbench:latest` started on GitHub Actions (authentic FHIR R4 backend).
+- [Basic 2-task pilot 41300632403](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41300632403), public `test_data_v2.json`: MRN lookup and age calculation, **2/2**, $0.00514, 2.59s / 2.25s. Exact-answer custom scorer (author data but not author scoring code).
+- [Advanced 2-task pilot 41301246193](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41301246193), newer `new_patient_tasks.json`: 6-hour/12-hour heart-rate averages on real FHIR Observations, **2/2** by UNMODIFIED `src.medagentbenchevals.new_refsol.task3`, $0.00508, no model failures.
+- [Clinical action 2-task pilot 41301962769](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41301962769), `new_patient_tasks.json`: EHR procedure retrieval and actual disposable FHIR `ServiceRequest` for CT abdomen/pelvis follow-up, **2/2** by UNMODIFIED `src.medagentbenchevals.new_refsol.task1`, $0.01481, 5.376s / 3.859s, no model failures.
+- An earlier action-run [41301562564](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41301562564) generated correct 2/2 FHIR orders but its grading step crashed due to an upstream `extract_posts` off-by-one bug (evaluating a final `POST request accepted` history item as a new POST). The workaround appends one empty boundary event to the scorer history in our own scoring wrapper, **without editing the official author grader or FHIR action payload**. Both tasks then passed in the verified rerun.
+- **Aggregate narrow probe: 6/6 public tasks, four via authors' own per-category evaluator functions.** Not representative of 300-task MedAgentBench v2, no whole-benchmark pass rate, and not PhysicianBench.
+
+### Official MAST endpoint — 10 parallel HTTP requests
+- [GitHub Actions 41301851356](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41301851356), `benchmark/scripts/mast-http-10-parallel.mjs`: 10 simultaneous authenticated `text/plain` SCT-style requests through the actual local Next.js `/api/benchmark/mast` endpoint.
+- Result: 10/10 valid structured answers, 0 failures, 4.419 seconds wall time, p50=2.393 seconds, p95=4.397 seconds, max=4.397 seconds. The script does not surface API usage costs; **no USD amount is claimed** for this load test.
+- This validates **fast SCT** HTTP concurrency *only*. It does not prove 5–10 concurrent **multiagent NOHARM/CPC** requests meet 300 seconds or establish that the Vercel deployment currently points to this latest branch. Vercel automatic deployments remained rate-limited and unchanged during these GitHub tests.
+
+### Still outstanding / hard blockers
+- **True CPC-Bench**: clinical NEJM inputs are licensed; the Microsoft SDBench public synthetic tasks explicitly cannot establish real diagnostic accuracy. Need permitted cases plus official diagnosis rubric.
+- **PhysicianBench**: 100 long-horizon tasks / 670 verified checkpoints, but its original FHIR Docker archive is distributed through Stanford Redivis with dataset access rules. Our MedAgentBench FHIR Docker is NOT an equivalent substitute.
+- **Multimodal DDI/MIDAS**: 2 genuine public dermoscopy examples have been smoke-tested but Stanford DDI registration and its official image grading are separate.
+- **NOHARM current Opus candidate**: frozen 30-case 0.8555 is the PREVIOUS consilium version. The new Claude Opus 5.5 default has not been re-evaluated on a comparable NOHARM k=11 protocol. Those original scores cannot be assigned to the new model.
+- **RAG**: FDA/NIH pilot positive only on tiny open subset; robust independent clinical improvement unproven.
+- **Privacy**: all FHIR EHR test cases and source images are public/synthetic researcher-permitted samples. Do not cache or publish independent PRIVATE MAST input/output when submitted.
+
+### Prioritized next actions
+1. Test new Opus 5.5 candidate's clinical safety on independent NOHARM variants and adjudicate serious previous flags.
+2. Add consistent radiology lesion differential and conditional second-reader triggers; independently adjudicate both images before treating textual similarities as clinical accuracy.
+3. Expand MedAgentBench v2 to distinct clinical action categories using the AUTHORS' grader with a fixed, limited budget.
+4. Acquire PhysicianBench and DDI access through their required research workflows and test true original data without copying restricted records into public GitHub artifacts.
+5. Complete full-consilium 5–10 concurrency test and official MAST submission endpoint check once deployment is permitted.
