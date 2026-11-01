@@ -1,0 +1,36 @@
+name: MAST agentic synthetic FHIR tool-loop pilot
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-agentic-fhir-two.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  agentic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Synthetic FHIR clinical tool-call pilot
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.synthetic-fhir.config.ts run lib/benchmark/mast.synthetic-fhir.live.test.ts --testTimeout=900000
+      - name: Save tool traces, checkpoint scores and measured prices
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-agentic-fhir-two
+          path: benchmark/internal-results/agentic-synthetic-fhir/
+          retention-days: 21
+          if-no-files-found: warn
