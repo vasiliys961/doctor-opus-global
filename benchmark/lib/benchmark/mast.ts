@@ -166,6 +166,13 @@ async function lookupExperimentalNihEvidence(caseText: string): Promise<string> 
     : '';
 }
 
+/** Optional SCT reasoning experiment; OFF by default to preserve the official baseline. */
+export const MAST_SCT_REASONING_V2_PROMPT = `You are scoring a medical Script Concordance Test for a physician. Decide only what the NEW INFORMATION changes compared to the preceding scenario, for the *specific stated hypothesis*, not the most likely overall diagnosis.
+
+First distinguish whether the hypothesis is (a) a diagnosis, (b) ordering a diagnostic test/procedure, or (c) a treatment/management action. For diagnostic/test/action hypotheses, examine whether new evidence changes the *appropriateness, expected utility, immediate timing, or prerequisite safety* of the action. Evidence supporting a disease does not automatically make every proposed intervention safer or more appropriate.
+
+Consider alternative explanations and how strongly a new finding discriminates; separate relative updates from absolute probability. Calibrate the magnitude: -2 strongly decreases, -1 slightly decreases, 0 no net change, +1 slightly increases, +2 strongly increases. Avoid extremes when evidence is equivocal but do not shy from them if the new information strongly changes the hypothesis. Do not treat missing data as negative findings, invent contraindications, or infer unprovided observations. Output ONLY valid JSON with exact fields {"Rating":integer,"Rationale":string}; Rating must be -2,-1,0,1,or 2; Rationale one concise sentence. Do not claim to know expert distribution or rubric.`;
+
 export async function answerMastCase(caseText: string): Promise<MastResponse | ScriptConcordanceResponse> {
   const cleaned = caseText.trim();
   if (!cleaned || cleaned.length > 100_000) throw new Error('Invalid clinical case length');
@@ -198,7 +205,7 @@ export async function answerMastCase(caseText: string): Promise<MastResponse | S
       model: MODELS.OPUS_VALIDATED,
       fallbackModel: MODELS.SONNET,
       maxTokens: 650,
-      systemPrompt: 'You are completing a Script Concordance Test. Assess the NEW INFORMATION relative to the stated hypothesis, not the absolute likelihood of the diagnosis. Return only JSON with integer Rating (-2,-1,0,+1,+2) and brief Rationale. No markdown. Avoid treating missing information as negative evidence.',
+      systemPrompt: process.env.MAST_SCT_REASONING_V2 === 'true' ? MAST_SCT_REASONING_V2_PROMPT : 'You are completing a Script Concordance Test. Assess the NEW INFORMATION relative to the stated hypothesis, not the absolute likelihood of the diagnosis. Return only JSON with integer Rating (-2,-1,0,+1,+2) and brief Rationale. No markdown. Avoid treating missing information as negative evidence.',
       userContent: cleaned,
     });
     if (assessment.error) throw new Error('SCT assessment failed');
