@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { answerMastCase } from './mast';
 import { getDiagnosticApiUsageSnapshot } from '../diagnostics/llm-client';
 
-type SourceCase = {case_id:string;case_summary:string;final_diagnosis:string;case_title:string;full_text?:string};
+type SourceCase = {case_id:string;case_summary:string;initial_presentation:string;final_diagnosis:string;case_title:string;full_text?:string};
 const ROOTS = [
   '../sdbench-source/data/processed_case_data/synthetic',
   '../sdbench-source/sdbench/_bundled_data/processed_case_data/synthetic',
@@ -34,19 +34,19 @@ it('two open synthetic CPC-like initial-presentation tasks: full consilium, no r
   for(const item of samples){
     const pre=getDiagnosticApiUsageSnapshot();
     if(pre.unpricedCalls>initial.unpricedCalls || pre.costUsd-initial.costUsd>=BUDGET_USD*0.7){failure='Budget or price tracking guard';break;}
-    if(!item.case_summary || !item.final_diagnosis) {failure='Missing synthetic source fields';break;}
+    if(!item.initial_presentation || item.initial_presentation.length<500 || !item.final_diagnosis) {failure='Missing full initial presentation or diagnosis';break;}
     // Explicitly do not pass case_title, final_diagnosis, full_text or reference rubric to the model.
     const task='Synthetic clinical reasoning pilot, NOT the official NEJM CPC-Bench. '+
       'From the INITIAL PRESENTATION ONLY, propose the leading diagnosis and two alternative diagnoses. '+
       'Explain supporting and missing findings, rank next tests, and state risks of premature closure. '+
-      'Do not hallucinate patient facts.\n\nINITIAL PRESENTATION:\n'+item.case_summary;
+      'Do not hallucinate patient facts.\n\nINITIAL PRESENTATION:\n'+item.initial_presentation;
     const started=Date.now();
     try {
       const answer=await answerMastCase(task);
       if(!('response' in answer) || answer.response.length<80)throw Error('Invalid clinical reply');
       const post=getDiagnosticApiUsageSnapshot();
       const record={caseId:String(item.case_id),source:'microsoft/sdbench synthetic',sourceSha,
-        inputKind:'case_summary_only',answer:answer.response,
+        inputKind:'full_initial_presentation_no_reference',inputChars:item.initial_presentation.length,answer:answer.response,
         referenceDiagnosisForOfflineReview:item.final_diagnosis,
         elapsedSeconds:ROUND((Date.now()-started)/1000),costUsd:ROUND(post.costUsd-pre.costUsd),
         agentFailures:post.failedCalls-pre.failedCalls,costKnown:post.unpricedCalls===pre.unpricedCalls};
