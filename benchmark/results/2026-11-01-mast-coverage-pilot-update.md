@@ -12,7 +12,7 @@ Reference: [official MAST benchmarks](https://www.arise-ai.org/mast/benchmarks) 
 | SCT | full public 174-item fast route, 0.77319, ~$1.355; V2 prompt A/B 20 cases 0.740 vs retained 0.770 | Genuine SCT public format; NOT whole consilium | Validate current *candidate* frozen routing; official evaluator |
 | CPC | 4/4 leading diagnoses on distinct Microsoft SDBench SYNTHETIC presentations; direct Sonnet one-round: 96–124s and zero provider errors | Synthetic task format only, not official CPC/NEJM | Obtain licensed NEJM-CPC material or independent organizers' eval |
 | ReXrank Mini | 2/2 genuine CC BY 4.0 pediatric chest radiographs processed; reports generated for both | Correct actual-pixels visual pipeline, source **not ReXrank** | Obtain actual ReXrank-allowed images, blinded clinical reporting, independent grading |
-| Multimodal Derm | 2 CC BY-SA 4.0 Wikimedia dermoscopy cases workflow submitted | **Workflow run 41294018180 must be checked**, not an official DDI/MIDAS score | Authorized individual DDI/MIDAS access, comply with noncommercial research terms |
+| Multimodal Derm | 2 CC BY-SA 4.0 real Wikimedia dermoscopy images analyzed for $0.05891 | Clinical smoke 2/2 reports, not DDI/MIDAS score | Authorized individual DDI/MIDAS access, comply with noncommercial research terms |
 | MedAgentBench v2 | 2 synthetic FHIR-like multistep tasks; Sonnet 2/2, $0.03087; Gemini Flash 1/2, $0.01032 | In-memory FHIR-like sandbox, no actual hospital FHIR server | Official 300-task FHIR R4 simulated hospital harness and pass@1 scoring |
 | PhysicianBench | Same generic synthetic FHIR-like tool loop is a preliminary tool-action smoke only | **Not tested on PhysicianBench at all** | EHR Docker image under permitted Stanford Redivis access + verified checkpoints |
 
@@ -39,7 +39,7 @@ Reference: [official MAST benchmarks](https://www.arise-ai.org/mast/benchmarks) 
 - The parent `main` is unchanged. Vercel production is older; GitHub Actions executes new branch tests irrespective of Vercel deploy quota.
 
 ## To-do — next economical and true-benchmark gates
-1. Finish/check two-case public dermoscopic source smoke; do not conflate Commons examples with DDI/MIDAS. Research terms for DDI require **individual registration**; do not share restricted patient images/artifacts or upload without authorization.
+1. Check clinical correctness and error categories of two-case public dermoscopic source smoke; do not conflate Commons examples with DDI/MIDAS. Research terms for DDI require **individual registration**; do not share restricted patient images/artifacts or upload without authorization.
 2. Run ONE licensed dermatology case set and 2 genuine ReXrank cases once source access/rights are verified. Keep original source image, model JSON, final report, blinded expert scoring; avoid reference leakage.
 3. Move from **in-memory pseudo-FHIR** to public MedAgentBench v2 actual FHIR R4 server/harness, and to PhysicianBench only when its separately licensed Docker image is accessible. Patient records must be authorized and outputs kept per license.
 4. Official CPC samples need NEJM rights; Microsoft SDBench synthetic cases are training/dev smoke, not a clinical-performance measurement.
@@ -51,3 +51,7 @@ Reference: [official MAST benchmarks](https://www.arise-ai.org/mast/benchmarks) 
 - Wikimedia dermoscopy images: license CC BY-SA 4.0, credit Philipp Tschandl and Dermanonymous, linked in `benchmark/lib/benchmark/mast.derm-public2.live.test.ts`.
 - Restricted DDI: [Stanford Research Use Agreement](https://ddi-dataset.github.io/). Re-distribution prohibited; do not use unregistered copies.
 - NEJM CPC: source licensing for actual benchmark cases; Microsoft SDBench synthetic cases are openly redistributable and **not suitable for reported diagnostic-performance claims**.
+
+### Public dermoscopy — completed research smoke
+- [GitHub run 41294018180](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41294018180): CC BY-SA 4.0 photos, 2/2 image-to-report completed, cost **$0.0589065**. Benign nevus 13.396 s, Flash-only, report favored a benign melanocytic nevus. Melanoma-source photo 27.807 s, Flash + conditional Pro; report listed amelanotic/hypomelanotic melanoma as a crucial diagnosis not to miss, acknowledged limited image quality and suggested low threshold for biopsy. **No official histopathology-grade performance estimate**, no DDI/MIDAS access. Attributions: Philipp Tschandl and Dermanonymous (Wikimedia Commons).
+- Candidate Claude Opus 5.5 replaced Fable only in contest debate configuration: live one-case SDBench synthetic diagnosis [workflow 41294260683](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41294260683). **Started; score, latency and cost must not be claimed until run is complete**.
