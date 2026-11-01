@@ -1,0 +1,63 @@
+name: MAST ECG Opus 3 genuine waveform-plus-image fusion comparisons
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - '.github/workflows/mast-ecg-opus-fused-three.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fused-ecg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: vasiliys961/ecg-opus-global
+          ref: b0d1c3b5745dd348aa81670452aac0d6a7150fd8
+          path: ecg-opus-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install ORIGINAL pinned ECG Opus numerical dependencies
+        run: |
+          python -m pip install -q 'numpy==1.26.4' 'pandas==2.2.3' 'scipy==1.14.1' 'neurokit2==0.2.12' matplotlib
+          python -m pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Inspect three true digital ECG signals with NeuroKit2; no diagnostic labels in model input
+        env:
+          PYTHONPATH: ecg-opus-source
+        run: |
+          python benchmark/scripts/measure_ecg_opus_original_three.py ecg-opus-source/examples2 benchmark/internal-results/ecg-opus-digital-three
+          python benchmark/scripts/render_ecg_opus_public_examples.py ecg-opus-source/examples2 ecg-opus-rendered
+      - name: Install contest benchmark
+        working-directory: benchmark
+        run: npm install --no-audit --no-fund
+      - name: Report independent ECG pixels plus real source numerical evidence via Gemini -> Opus
+        working-directory: benchmark
+        env:
+          ECG_OPUS_USE_DIGITAL_MEASUREMENTS: 'true'
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.ecg-opus-public-three.config.ts run --testTimeout=900000
+      - name: Archive non-image model reports and algorithmic numbers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mast-ecg-opus-three-digital-plus-vision
+          path: |
+            benchmark/internal-results/ecg-opus-fused-three/
+            benchmark/internal-results/ecg-opus-digital-three/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: Destroy temporary signals and ECG image copies
+        if: always()
+        run: rm -rf ecg-opus-source ecg-opus-rendered
