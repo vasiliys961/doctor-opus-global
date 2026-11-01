@@ -47,7 +47,7 @@ it('3 CC BY-SA genuine thyroid ultrasound stills: blinded observation and radiol
    const checksum=createHash('sha256').update(bytes).digest('hex');
    const began=Date.now();
    // Label, file name and webpage context are never passed to the observers.
-   const analysis=await analyzeBenchmarkMedicalImage({modality:'ultrasound',
+   const analysis=await analyzeBenchmarkMedicalImage({modality:'ultrasound',examRegion:'thyroid',
      images:[{mimeType:'image/jpeg',base64:bytes.toString('base64')}],
      allowSecondRead:true});
    if(!analysis.report||analysis.report.length<60)
@@ -75,7 +75,7 @@ it('3 CC BY-SA genuine thyroid ultrasound stills: blinded observation and radiol
    unpricedCalls:end.unpricedCalls-start.unpricedCalls,
    providerFailures:end.failedCalls-start.failedCalls,
    cases:summaries,
-   note:'Image-to-report three-case technical feasibility; not lesion diagnosis score, not cine-clip benchmark, source captions are not pathology'
+   note:'Anatomy-aware thyroid observer; lesion labels remain hidden. Compare with prior blind/no-region trial. Not cine-clip benchmark or pathology gold-standard.'
  };
  writeFileSync(OUT+'/summary.json',JSON.stringify(summary,null,2));
  console.log('THYROID_ULTRASOUND_PUBLIC_THREE_SUMMARY '+JSON.stringify(summary));
