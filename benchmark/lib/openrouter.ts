@@ -8,7 +8,7 @@ export const MODELS = {
   HAIKU: 'anthropic/claude-haiku-4.5',
   LLAMA: 'meta-llama/llama-3.2-90b-vision-instruct',
   GEMINI_3_FLASH: 'google/gemini-3.8-flash',
-  GEMINI_3_PRO: 'google/gemini-3.8-flash',
+  GEMINI_3_PRO: 'google/gemini-3.1-pro-preview',
   FABLE_5: 'anthropic/claude-fable-5.1',
   FUGU_ULTRA: 'sakana/fugu-ultra',
 };
