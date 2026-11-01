@@ -67,6 +67,8 @@ export async function auditManagementSafety(args:{
    'The draft may be wrong. Review only safety-critical decisions supported by the ORIGINAL case and supplied source excerpts.',
    'The most severe foreseeable harms and unsafe re-exposure decisions outrank general stylistic improvements.',
    'If a serious drug reaction is described, distinguish hold vs discontinue vs re-exposure; never quietly allow rechallenge.',
+   'Treat an explicitly documented severity grade or event date as part of the given case, not as hallucination.',
+   'Do not mark pass when a draft suggests an exception to a possible permanent-discontinuation rule without relevant drug-specific source support; return uncertain when evidence is unavailable.',
    'Do not invent product-label specifics, contraindications, citations, patient data, or claim to have researched sources.',
    'If evidence is missing, label that uncertainty and require an appropriate physician verification before any unsafe action.',
    'Do not change a correct plan simply because a hypothetical harm is possible.',
