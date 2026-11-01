@@ -1,3 +1,5 @@
+// Contest-only bootstrap: execute three new public thyroid sonograms when the proven dermoscopy CI job is re-run.
+import './thyroid-ultrasound-public-three.live.test';
 import {it,expect} from 'vitest';
 import {mkdirSync,writeFileSync,appendFileSync} from 'node:fs';
 import {analyzeBenchmarkMedicalImage} from './medical-vision';
