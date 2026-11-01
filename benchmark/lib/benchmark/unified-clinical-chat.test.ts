@@ -9,7 +9,7 @@ import type {UnifiedClinicalRequest} from './unified-clinical-chat';
 const eye={image:{base64:'AQIDBA==',mimeType:'image/png' as const}};
 const parent={finalDiagnosis:{diagnosis:'Atrial fibrillation, provisional',reasoning:'RR variation; no verified P waves'},
  requiresHumanReview:false,totalCostUsd:0.12,
- auditTrail:{amscRound:{synthesisContent:'AF is the leading working hypothesis, but the rhythm needs confirmation.'}}};
+ auditTrail:{testHistory:[],challengerNotes:[],stewardshipNotes:[],amscRound:{synthesisContent:'AF is the leading working hypothesis, but the rhythm needs confirmation.'}}};
 beforeEach(()=>{
  vi.mocked(runConsilium).mockReset().mockResolvedValue(parent as never);
  vi.mocked(analyzeECGOpusImage).mockReset().mockResolvedValue({
