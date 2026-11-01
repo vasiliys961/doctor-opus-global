@@ -25,7 +25,7 @@ it('genuine JPEG -> independent visual JSON -> clinical radiology report, two pu
   writeFileSync(OUT+'/manifest.json',JSON.stringify({source:'probml/chest_xray_kaggle',revision:REV,
     attribution:'Kermany et al., Cell 2018, CC BY 4.0',cases:CASES,
     method:'two-stage actual-image research smoke, not ReXrank nor clinical validation',
-    secondRead:'OFF in cost-limited smoke; test separately on uncertainty',
+    secondRead:process.env.MAST_XRAY_SECOND_READ==='true' ? 'ON for critical findings' : 'OFF',
     labelsOnlyAfterInference:true},null,2));
   const origin=getDiagnosticApiUsageSnapshot();
   let completed=0;let stopped:string|null=null;
@@ -47,7 +47,7 @@ it('genuine JPEG -> independent visual JSON -> clinical radiology report, two pu
     const t0=Date.now();
     try{
       const result=await analyzeBenchmarkMedicalImage({modality:'xray',
-        images:[{base64:buffer.toString('base64'),mimeType:'image/jpeg'}],allowSecondRead:false});
+        images:[{base64:buffer.toString('base64'),mimeType:'image/jpeg'}],allowSecondRead:process.env.MAST_XRAY_SECOND_READ==='true'});
       if(!Array.isArray(result.observation.findings) || result.report.length<60)
         throw Error('Invalid report from original image');
       const after=getDiagnosticApiUsageSnapshot();
