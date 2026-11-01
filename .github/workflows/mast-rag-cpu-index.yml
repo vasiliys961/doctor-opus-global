@@ -28,7 +28,8 @@ jobs:
       - name: Validate synthetic public source and chunking without downloading model
         run: node benchmark/rag/indexer.mjs --input benchmark/rag/sample-public.jsonl --dry-run
   index-public-corpus:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    # Also run once on a workflow-file commit using only the synthetic CC0 smoke corpus.
+    # All subsequent real-corpus runs require explicit workflow_dispatch.
     needs: validate-indexer
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -41,7 +42,7 @@ jobs:
           node-version: '22'
       - name: Restrict input to a checked-in public/redistributable corpus
         env:
-          SOURCE_PATH: ${{ inputs.corpus_path }}
+          SOURCE_PATH: ${{ inputs.corpus_path || 'benchmark/rag/sample-public.jsonl' }}
         run: |
           case "$SOURCE_PATH" in
             benchmark/rag/sample-public.jsonl|benchmark/rag/data/*.jsonl) ;;
@@ -58,7 +59,7 @@ jobs:
         run: npm install --prefix benchmark/rag --no-audit --no-fund
       - name: Generate 384-dimensional Int8 embeddings on CPU
         env:
-          SOURCE_PATH: ${{ inputs.corpus_path }}
+          SOURCE_PATH: ${{ inputs.corpus_path || 'benchmark/rag/sample-public.jsonl' }}
         run: node benchmark/rag/indexer.mjs --input "$SOURCE_PATH" --output benchmark/rag-index-public/index.jsonl --batch 8
       - name: Keep evaluated open-source index as artifact (not a Git commit)
         uses: actions/upload-artifact@v4
