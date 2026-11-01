@@ -1,0 +1,40 @@
+name: MAST three CC BY-SA thyroid ultrasound real image pilots
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - '.github/workflows/mast-thyroid-ultrasound-public-three.yml'
+      - 'benchmark/lib/benchmark/thyroid-ultrasound-public-three.live.test.ts'
+      - 'benchmark/vitest.thyroid-public-three.config.ts'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ultrasound:
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    defaults:
+      run:
+        working-directory: benchmark
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Actual licensed sonography pixels to Doctor Opus report
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        run: npx vitest --config vitest.thyroid-public-three.config.ts run --testTimeout=1200000
+      - name: Upload generated reports only, never source pixels
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thyroid-ultrasound-three-licensed-reports
+          path: benchmark/internal-results/thyroid-ultrasound-public-three/
+          retention-days: 14
+          if-no-files-found: warn
