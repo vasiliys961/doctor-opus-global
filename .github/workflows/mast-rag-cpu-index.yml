@@ -1,0 +1,68 @@
+name: Doctor Opus benchmark RAG CPU indexing
+# Opt-in CPU index build using the parent app's Xenova E5-small architecture.
+# Public-only source material. Does not change inference or MAST scores.
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/mast-rag-cpu-index.yml']
+  workflow_dispatch:
+    inputs:
+      corpus_path:
+        description: 'Allowed public corpus path (benchmark/rag/sample-public.jsonl or benchmark/rag/data/*.jsonl)'
+        required: true
+        default: 'benchmark/rag/sample-public.jsonl'
+permissions:
+  contents: read
+jobs:
+  validate-indexer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run deterministic offline tests
+        run: node --test benchmark/rag/indexer.test.mjs
+      - name: Validate synthetic public source and chunking without downloading model
+        run: node benchmark/rag/indexer.mjs --input benchmark/rag/sample-public.jsonl --dry-run
+  index-public-corpus:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: validate-indexer
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Restrict input to a checked-in public/redistributable corpus
+        env:
+          SOURCE_PATH: ${{ inputs.corpus_path }}
+        run: |
+          case "$SOURCE_PATH" in
+            benchmark/rag/sample-public.jsonl|benchmark/rag/data/*.jsonl) ;;
+            *) echo "Only whitelisted benchmark/rag public sources are allowed"; exit 2 ;;
+          esac
+          test -f "$SOURCE_PATH" || { echo "Source file missing"; exit 3; }
+          node benchmark/rag/indexer.mjs --input "$SOURCE_PATH" --dry-run
+      - name: Cache open-source embedding model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: benchmark-e5-small-v1
+      - name: Install optional headless embedding runtime
+        run: npm install --prefix benchmark/rag --no-audit --no-fund
+      - name: Generate 384-dimensional Int8 embeddings on CPU
+        env:
+          SOURCE_PATH: ${{ inputs.corpus_path }}
+        run: node benchmark/rag/indexer.mjs --input "$SOURCE_PATH" --output benchmark/rag-index-public/index.jsonl --batch 8
+      - name: Keep evaluated open-source index as artifact (not a Git commit)
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-public-rag-e5-small-cpu-index
+          path: benchmark/rag-index-public
+          retention-days: 21
