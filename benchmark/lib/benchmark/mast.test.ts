@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMastManagementContext, formatMastAnswer, isScriptConcordancePrompt, MAST_MANAGEMENT_PROMPT, parseScriptConcordance } from './mast';
+import { buildMastManagementContext, formatMastAnswer, getMastDiagnosticOutputPolicy, isScriptConcordancePrompt, MAST_MANAGEMENT_PROMPT, parseScriptConcordance } from './mast';
 import type { DiagnosticResult } from '../diagnostics/types';
 import { DIAGNOSTIC_ROLES } from '../diagnostics/roles';
 import { MODELS } from '../openrouter';
@@ -25,6 +25,19 @@ describe('MAST response adapter',()=>{
     const context=buildMastManagementContext('Hypoxic patient',example);
     for(const fragment of ['Hypoxic patient','Pulmonary embolism','Pulmonology','anticoagulation','Consider bleeding risk','Avoid unnecessary repeat imaging']) expect(context).toContain(fragment);
     for(const fragment of ['grade 3-4 drug-related adverse reaction','specialist-led','normal routine tests','probably can continue','Treatment and management','Monitoring and follow-up','Immediate actions / triage','Safety and stewardship','required specialist, care destination and urgency','Sequence diagnostic workup in temporal order','second-line tests only if']) expect(MAST_MANAGEMENT_PROMPT).toContain(fragment);
+  });
+  it('respects deliberate differential without pretending an unconfirmed diagnosis is established',()=>{
+    const general=getMastDiagnosticOutputPolicy('Assess the patient and propose a safe next-step plan');
+    expect(general).toContain('clinical differential');
+    expect(general).toContain('working diagnosis');
+    const cpc=getMastDiagnosticOutputPolicy('From the initial presentation propose the leading diagnosis and two alternatives');
+    expect(cpc).toContain('exactly one leading working diagnosis');
+    expect(cpc).toContain('Do not turn a hypothesis into a confirmed diagnosis');
+    const context=buildMastManagementContext('Select the most likely diagnosis',example);
+    expect(context).toContain('LEADING WORKING DIAGNOSIS');
+    expect(context).toContain('provisional, not automatically established');
+    expect(context).toContain('Give exactly one leading working diagnosis');
+    expect(MAST_MANAGEMENT_PROMPT).toContain('not automatically a confirmed diagnosis');
   });
   it('has working fallback for critical challenger and checklist roles',()=>{
     expect(DIAGNOSTIC_ROLES.challenger.fallbackModel).toBe(MODELS.SONNET);
