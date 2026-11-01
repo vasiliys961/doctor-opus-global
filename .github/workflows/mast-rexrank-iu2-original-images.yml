@@ -60,6 +60,15 @@ jobs:
           OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
         working-directory: benchmark
         run: npx vitest --config vitest.rexrank-iu.config.ts run lib/benchmark/rexrank-iu-two.live.test.ts --testTimeout=900000
+      - name: Contract tests for Sono-style evidence, ECG Opus, image time and projection
+        working-directory: benchmark
+        run: npx vitest --config vitest.sourcebound-contract.config.ts run
+      - name: Two genuine paired-view source-bound comparative studies
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+        working-directory: benchmark
+        run: npx vitest --config vitest.sourcebound-live.config.ts run --testTimeout=900000
       - name: Retain reports and evaluation metadata; NEVER original pixels
         if: always()
         uses: actions/upload-artifact@v4
