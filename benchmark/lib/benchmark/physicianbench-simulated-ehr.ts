@@ -85,8 +85,36 @@ export async function runPhysicianStyleCase(task:SyntheticPhysicianTask):Promise
  const read=new Set<Section>(),events:Event[]=[],errors:string[]=[];
  const history:string[]=[];let note='',done=false,cost=0,steps=0;
  for(let step=0;step<8;step++){
+  // The previous pilot fetched all clinical facts correctly but the free-form
+  // LLM tool schema broke while trying to wrap a long physician note in JSON.
+  // When chart review is complete, generate the note as PLAIN TEXT through a
+  // dedicated clinical writing step; the application performs the file write.
+  // This is a deterministic workflow boundary, not a clinical correctness fix.
+  if(read.size===3 && !note){
+   const draft=await callDiagnosticAgent({
+    model:MODELS.SONNET,maxTokens:2400,reasoningEffort:'low',
+    systemPrompt:[
+     'You are a physician drafting an assessment and plan from a FICTIONAL EHR.',
+     'Write plain-text sections: Relevant chart evidence, Assessment, Medication or testing plan, Safety/red flags, Follow-up.',
+     'Use ONLY the provided chart. Explicitly reconcile old vs recent findings.',
+     'If urgently unstable, prioritize emergency evaluation and avoid unsafe routine outpatient dose changes.',
+     'Explain why an intervention is needed or why it must be deferred to urgent clinician assessment.',
+     'Do not output JSON or instructions to tools. No fabricated results or actual electronic prescriptions.'
+    ].join('\\n'),
+    userContent:'PUBLIC PHYSICIANBENCH-STYLE TASK: '+task.question+
+      '\\nSYNTHETIC CHART AFTER COMPLETED TOOL READS:\\n'+JSON.stringify(task.chart)
+   });
+   steps++;cost+=draft.costUsd;
+   if(draft.error || draft.content.trim().length<180){
+    errors.push('clinical-note-generation-failed');break;
+   }
+   note=draft.content.trim();
+   events.push({tool:'write_management_note',ok:true});
+   done=true;
+   break;
+  }
   const call=await callDiagnosticAgent({
-   model:MODELS.SONNET,maxTokens:1300,reasoningEffort:'low',
+   model:MODELS.SONNET,maxTokens:400,reasoningEffort:'low',
    systemPrompt:PROMPT,
    userContent:'PUBLIC TASK STYLE (not original patient): '+task.sourceTask+
      '\nClinical instruction: '+task.question+'\nPrevious tool events:\n'+history.slice(-5).join('\n')+
