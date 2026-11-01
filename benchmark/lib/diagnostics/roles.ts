@@ -16,18 +16,15 @@ export interface DiagnosticRoleConfig {
 }
 
 /**
- * Модель для ролей, где нужна максимальная клиническая глубина рассуждения
- * (Dr. Hypothesis, Dr. Challenger, Dr. Checklist): Fable 5 по бенчмарку
- * HealthBench Professional превосходит Opus (+9 п.п.) и GPT-5.5 (+14 п.п.) —
- * у Fugu Ultra (мультиагентный оркестратор Sakana, резервная модель ниже)
- * заявленной медицинской компетенции нет вообще, только косвенные научные
- * бенчмарки, поэтому в основной роли он уступает.
- * Откат без деплоя: CONSILIUM_DEBATE_MODEL=opus (или прямой ID модели).
+ * Competition-only default: Claude Opus 5.5 for the hypothesis, challenger
+ * and checklist roles. Sonnet 5.5 remains the availability fallback.
+ * Explicit CONSILIUM_DEBATE_MODEL continues to override the default.
+ * Frozen historical NOHARM/SCT results are never relabeled.
  */
 function getConsiliumDebateModel(): string {
   const raw = String(process.env.CONSILIUM_DEBATE_MODEL || '').trim().toLowerCase();
-  if (!raw) return MODELS.FABLE_5;
-  if (raw === 'opus' || raw === MODELS.OPUS_VALIDATED.toLowerCase()) return MODELS.OPUS_VALIDATED;
+  if (!raw) return MODELS.OPUS;
+  if (raw === 'opus' || raw === MODELS.OPUS.toLowerCase()) return MODELS.OPUS;
   if (
     raw === 'fable' ||
     raw === 'fable-5' ||
@@ -40,16 +37,10 @@ function getConsiliumDebateModel(): string {
 }
 
 const CONSILIUM_DEBATE_MODEL = getConsiliumDebateModel();
-// A verified responsive Sonnet fallback is the default for the candidate v2.
- // Fugu Ultra may remain selectable by env var, but its reliability should be
- // measured on clinical workloads before using it as the sole rescue path.
- // The frozen NOHARM baseline in Actions run 41237938481 is unchanged.
+// Fallback only after an Opus provider error; do not retry an identical model.
+// Reasoning low preserves visible clinical text and structured hypothesis JSON.
 const CONSILIUM_DEBATE_FALLBACK_MODEL =
   (process.env.CONSILIUM_DEBATE_FALLBACK_MODEL || '').trim() || MODELS.SONNET;
-// Fable 5 — модель с "thinking"-режимом, которая при недостаточном max_tokens тратит
-// весь бюджет на невидимые reasoning-токены и обрезает финальный ответ (проверено на
-// реальном прогоне: completion_tokens упирался ровно в max_tokens). effort=low экономит
-// этот бюджет для видимого ответа, максимально широкие max_tokens ниже — доп. запас.
 const CONSILIUM_DEBATE_REASONING_EFFORT = 'low' as const;
 
 export const JSON_HYPOTHESES_INSTRUCTION = `
