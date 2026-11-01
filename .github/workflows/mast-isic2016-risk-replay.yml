@@ -1,0 +1,42 @@
+name: MAST ISIC2016 ten-image risk triage offline replay
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-isic2016-risk-replay.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  frozen-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retrieve previously frozen ten original-image reports (NO API re-inference)
+        run: |
+          mkdir -p isic-source
+          gh run download 41310069281 --repo "${{ github.repository }}" \
+            --name doctor-opus-isic2016-public-10-derm-evaluation --dir isic-source
+      - name: Install test runner
+        working-directory: benchmark
+        run: npm install --no-audit --no-fund
+      - name: Replay physician-referral decision on fixed evidence without any LLM calls
+        working-directory: benchmark
+        run: npx vitest --config vitest.isic-risk-replay.config.ts run lib/benchmark/isic-risk-replay.test.ts
+      - name: Retain clinical error-analysis flags
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-isic2016-risk-triage-offline
+          path: benchmark/internal-results/isic-triage/replay.json
+          retention-days: 21
+          if-no-files-found: warn
