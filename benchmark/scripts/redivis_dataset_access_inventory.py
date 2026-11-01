@@ -13,7 +13,7 @@ import re
 import sys
 import redivis
 
-OWNERS = ("StanfordAIMI", "StanfordPHS", "HealthRex", "Stanford")
+OWNERS = ("AIMI",)
 KEYWORDS = (
     "physicianbench", "diversedermatology", "ddi2", "ddi",
     "mra-midas", "midas", "thyroidultrasound", "inspect",
@@ -30,7 +30,7 @@ SAMPLE_LEVELS = {"sample", "data", "edit"}
 
 def matching(name):
     canonical = re.sub(r"[^a-z0-9]+", "", name.casefold())
-    return any(re.sub(r"[^a-z0-9]+", "", word) in canonical for word in KEYWORDS)
+    if canonical == "udise" or "school" in canonical:\n        return False\n    return any(re.sub(r"[^a-z0-9]+", "", word) in canonical for word in KEYWORDS)
 
 def summarize(owner, properties):
     if not isinstance(properties, dict):
