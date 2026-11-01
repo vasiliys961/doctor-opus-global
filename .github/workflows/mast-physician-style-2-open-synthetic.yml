@@ -1,4 +1,5 @@
 name: MAST PhysicianBench-style two open-structure EHR tasks
+# Retest after splitting chart retrieval from long-form note drafting for reliable tool schema.
 on:
   push:
     branches: [feat/mast-consilium-adapter]
