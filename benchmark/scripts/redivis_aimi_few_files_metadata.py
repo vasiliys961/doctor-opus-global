@@ -28,3 +28,9 @@ for key,dataset_name,table_name in TARGETS:
         results.append({"dataset":key,"status":"sample_unavailable",
                         "errorType":type(err).__name__})
 print("REDIVIS_SMALL_FILE_INDEX_PROBE "+json.dumps(results))
+
+# Contest-only bootstrap: the proven Redivis GitHub Actions job has working
+# private secrets. Inspect only up to five authorized clinical label rows per
+# new dataset and print count-only summaries, never record values or images.
+from redivis_aimi_five_sample_probe import main as run_new_pending_sample_probe
+raise SystemExit(run_new_pending_sample_probe())
