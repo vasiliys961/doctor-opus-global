@@ -16,6 +16,7 @@ import type {ComparisonInput} from './source-bound-comparison';
 import {importRadiologySourceEvidence} from './radiology-source-evidence';
 import type {EvidenceItem} from './source-bound-evidence';
 import {arbitrateSourceEvidence} from './source-bound-evidence';
+import {formatMastAnswer} from './mast';
 
 export type ClinicalStudy=
  | {kind:'ecg-opus';sourceId:string;input:ECGImageInput}
@@ -147,8 +148,7 @@ export async function runUnifiedClinicalChat(input:UnifiedClinicalRequest):Promi
   reviewRequired:result.requiresHumanReview||arbiter.limitations.length>0,
   reviewReason:result.reviewReason||arbiter.limitations.join('; '),
   sourceCount:input.studies.length,sourceSummaries:summaries,
-  evidence,report:result.auditTrail.amscRound?.synthesisContent||
-    result.finalDiagnosis.diagnosis+'\n'+result.finalDiagnosis.reasoning,
+  evidence,report:formatMastAnswer(result).response,
   totalConsiliumCostUsd:result.totalCostUsd
  };
 }
