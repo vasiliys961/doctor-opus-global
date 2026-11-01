@@ -49,3 +49,10 @@ Contest-only fixes: `d0b978cd` (full initial presentation replaces one-line case
 
 ## Budget and preservation
 Target additional model spending <= $2–5 for new **pilot** tasks, not a hard bound when multiagent fan-out happens inside one clinical case. Use real tracked cost, stop between calls, no automatic repetition. Store artifact reports beyond the GitHub Actions retention dates; never put secrets or patient identifiers in public artifacts.
+
+## Subsequent contest-only experiment: SCT prompt V2
+- Experimental alternate fast SCT system prompt, **OFF by default**, in `benchmark/lib/benchmark/mast.ts`; activation env `MAST_SCT_REASONING_V2=true`. It explicitly distinguishes *diagnostic hypothesis* vs *test/procedure* vs *treatment*, weighs incremental evidence, procedural relevance/contraindications, and rating magnitude. No benchmark case-specific solutions or expert votes in the prompt.
+- 20 publicly available SCT case IDs sampled independently from scored outcomes (seed 20261101), baseline archived from original 174-case run (no repeat A spending); new pilot cost guard $0.35 checked between requests.
+- Source test `benchmark/lib/benchmark/mast.sct.promptv2.live.test.ts`, workflow `.github/workflows/mast-sct-v2-20.yml`, triggering commit `efae0281`. [Workflow run 41288111699](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41288111699). **At audit write-time run still in progress; no new score claimed.**
+- Original 174-case GitHub artifact downloaded to conversation working container as `/mnt/data/opus-sct-open174-artifact.zip` to preserve raw answers and scores beyond its November 7 expiration. No patient data in public benchmark archive.
+- Caution: changing `benchmark/vitest.live.config.ts` also triggered a second CPC synthetic workflow run `41288094700` under existing `paths` filter. Do not trigger additional automatic CPC runs while these are active. Costs are not necessarily strictly capped by in-test threshold due to complete individual multiagent request fanout.
