@@ -11,6 +11,7 @@ on:
       - 'benchmark/lib/benchmark/cpu-*.ts'
       - 'benchmark/lib/benchmark/nonblocking-cpu-detector.ts'
       - 'benchmark/lib/benchmark/lightweight-xray-cpu.ts'
+      - 'benchmark/lib/benchmark/xrv-cpu-worker-client*.ts'
       - 'benchmark/app/api/benchmark/clinical-chat/route.ts'
       - 'benchmark/vitest.sourcebound-contract.config.ts'
   workflow_dispatch:
