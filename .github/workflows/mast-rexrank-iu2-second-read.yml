@@ -1,0 +1,74 @@
+name: MAST ReXrank IU original-image independent second-read A-B
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/mast-rexrank-iu2-second-read.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  iu-rexrank:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: rajpurkarlab/ReXrank
+          ref: 0a18a41e580992ac7cd32a8a9463009654f0d390
+          path: rexrank-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch original IU X-ray pixels and EXTRACT ONLY two test study image pairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet 'huggingface_hub[hf_xet]'
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          from huggingface_hub import hf_hub_download
+          import json
+          # Research source mirror with IU Open-i provenance; no source images are uploaded as artifacts.
+          zpath=hf_hub_download(repo_id='dz-osamu/IU-Xray',repo_type='dataset',
+              filename='image.zip',revision='ba02a24d9f206782c2b1ec8ae24e4009022ae1ff')
+          base=Path('rexrank-selected')
+          metadata=json.load(open('rexrank-source/data/iu_xray/ReXRank_IUXray_test.json'))
+          with ZipFile(zpath) as z:
+              for id in ['CXR3030_IM-1405','CXR3673_IM-1828']:
+                  for relative in metadata[id]['image_path'][:2]:
+                      matches=[n for n in z.namelist() if n.replace('\\','/').endswith('/'+relative)]
+                      if len(matches)!=1: raise RuntimeError('Missing or duplicated original IU image '+relative)
+                      source=z.read(matches[0])
+                      if len(source)>9000000: raise RuntimeError('Unexpected source size')
+                      output=base/relative
+                      output.parent.mkdir(parents=True,exist_ok=True)
+                      output.write_bytes(source)
+                      print('verified image',relative,'bytes',len(source))
+          PY
+      - name: Install candidate benchmark
+        working-directory: benchmark
+        run: npm install --no-audit --no-fund
+      - name: Run 2 original-image studies with references blinded at inference
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+          MAST_REXRANK_FORCE_SECOND_READ: 'true'
+        working-directory: benchmark
+        run: npx vitest --config vitest.rexrank-iu.config.ts run lib/benchmark/rexrank-iu-two.live.test.ts --testTimeout=900000
+      - name: Retain reports and evaluation metadata; NEVER original pixels
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: doctor-opus-rexrank-iu-two-second-read-report
+          path: benchmark/internal-results/rexrank-iu-2/
+          retention-days: 21
+          if-no-files-found: warn
+      - name: Remove source pixels from runner
+        if: always()
+        run: rm -rf rexrank-selected
