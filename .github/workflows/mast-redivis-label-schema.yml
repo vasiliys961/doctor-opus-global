@@ -1,0 +1,27 @@
+name: MAST Redivis clinical label schema preflight
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths:
+      - '.github/workflows/mast-redivis-label-schema.yml'
+      - 'benchmark/scripts/redivis_aimi_label_schema.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      REDIVIS_API_TOKEN: ${{ secrets.REDIVIS_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -q redivis
+      - name: Inspect schemas without clinical data export
+        run: python benchmark/scripts/redivis_aimi_label_schema.py
