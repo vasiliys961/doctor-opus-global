@@ -59,16 +59,17 @@ export async function runNonBlockingCpuPair<V,T>(
  try{observed=await visionPromise}
  catch(error){
   abort.abort('visual_model_failed');
-  clearTimeout(deadline);
-  // Do not leave a dangling grace timer or a late detector result interpreted
-  // as a standalone diagnosis after source-vision failed.
+  finish({state:'failed',elapsedMs:Date.now()-started,
+   reason:'Vision stage failed; optional detector cannot replace an original source examination'});
   throw error;
  }
  if(!finished){
+  let graceTimer:ReturnType<typeof setTimeout>|undefined;
   await Promise.race([
    outcome,
-   new Promise<void>(resolve=>setTimeout(resolve,graceMs))
+   new Promise<void>(resolve=>{graceTimer=setTimeout(resolve,graceMs);})
   ]);
+  if(graceTimer!==undefined)clearTimeout(graceTimer);
   if(!finished){
    abort.abort('start_consilium_without_optional_detector');
    finish({state:'timed_out',elapsedMs:Date.now()-started,
