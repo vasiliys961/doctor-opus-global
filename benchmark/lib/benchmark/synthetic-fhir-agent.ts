@@ -80,7 +80,7 @@ export async function runSyntheticFhirTask(task:Task,maxSteps=9):Promise<FhirRun
   const context:string[]=[];
   let costUsd=0,failedCalls=0,reason='step-limit';
   for(let step=0;step<maxSteps;step++){
-    const call=await callDiagnosticAgent({systemPrompt:SYS,model:MODELS.GEMINI_3_FLASH,maxTokens:450,
+    const call=await callDiagnosticAgent({systemPrompt:SYS,model:MODELS.SONNET,maxTokens:650,reasoningEffort:'low',
       userContent:'Patient id: '+task.patientId+'\nTask: '+task.instruction+'\nPrevious tool history:\n'+
         context.slice(-6).join('\n')+'\nWhat is your next tool call? Return one JSON action only.'});
     costUsd+=call.costUsd;
