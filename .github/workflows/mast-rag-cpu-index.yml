@@ -55,12 +55,25 @@ jobs:
         with:
           path: benchmark/rag/.cache
           key: benchmark-e5-small-v1
+      - name: Restore previous public index for incremental reuse
+        uses: actions/cache@v4
+        with:
+          path: benchmark/rag-index-public
+          key: benchmark-rag-e5-v1-${{ hashFiles('benchmark/rag/indexer.mjs', 'benchmark/rag/sample-public.jsonl', 'benchmark/rag/data/**/*.jsonl') }}
+          restore-keys: |
+            benchmark-rag-e5-v1-
       - name: Install optional headless embedding runtime
         run: npm install --prefix benchmark/rag --no-audit --no-fund
       - name: Generate 384-dimensional Int8 embeddings on CPU
         env:
           SOURCE_PATH: ${{ inputs.corpus_path || 'benchmark/rag/sample-public.jsonl' }}
         run: node benchmark/rag/indexer.mjs --input "$SOURCE_PATH" --output benchmark/rag-index-public/index.jsonl --batch 8
+      - name: Confirm unchanged chunks reuse the cached vectors
+        env:
+          SOURCE_PATH: ${{ inputs.corpus_path || 'benchmark/rag/sample-public.jsonl' }}
+        run: |
+          node benchmark/rag/indexer.mjs --input "$SOURCE_PATH" --output benchmark/rag-index-public/index.jsonl --batch 8
+          node -e "const s=require('./benchmark/rag-index-public/index.jsonl.manifest.json');if(s.newEmbeddings!==0||s.reused!==s.chunks)process.exit(1);console.log('INDEX_REUSED '+s.reused+'/'+s.chunks)"
       - name: Keep evaluated open-source index as artifact (not a Git commit)
         uses: actions/upload-artifact@v4
         with:
