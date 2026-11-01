@@ -111,23 +111,24 @@ def main():
     parser.add_argument("--output",default="benchmark/rag/data/guidelines-public.jsonl")
     args=parser.parse_args()
     conf=json.loads(Path(args.sources).read_text())
-    assert len(conf["docs"])>=4
+    selected=[doc for doc in conf["docs"] if doc.get("enabled",True)]
+    assert len(selected)>=4, "At least four explicitly enabled sources required"
     ses=requests.Session()
     docs=[]
     provenance=[]
-    for src in conf["docs"]:
+    for src in selected:
         item,details=fetch_one(src,ses)
         docs+=item
         provenance.append(details)
         print("GUIDELINE_FETCH "+json.dumps(details),flush=True)
         time.sleep(0.5)
     if len(docs)<10: raise RuntimeError("Too few usable clinical sections")
-    if len({d["url"] for d in docs})<len(conf["docs"]):
+    if len({d["url"] for d in docs})<len(selected):
         raise RuntimeError("Duplicate/missing source URLs")
     path=Path(args.output);path.parent.mkdir(parents=True,exist_ok=True)
     result="\n".join(json.dumps(x,ensure_ascii=False) for x in docs)+"\n"
     path.write_text(result)
-    report={"documents":len(docs),"sources":len(conf["docs"]),
+    report={"documents":len(docs),"sources":len(selected),
         "totalChars":sum(len(d["text"]) for d in docs),
         "sha256":hashlib.sha256(result.encode()).hexdigest(),
         "retrievedUtc":datetime.now(timezone.utc).isoformat(),
