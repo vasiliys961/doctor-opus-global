@@ -1,4 +1,5 @@
 name: MAST contest saved-answer medication safety audit
+# Rerun with exact original case and stricter evidence requirement for re-exposure.
 on:
   push:
     branches: [feat/mast-consilium-adapter]
