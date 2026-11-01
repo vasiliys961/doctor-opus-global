@@ -65,3 +65,17 @@ it('patient privacy in source-chat context and explicit reviewer caveat',()=>{
  expect(text).toContain('did not directly inspect the source pixels');
  expect(text).toContain('Only one tracing examined');
 });
+
+it('charges specialist model calls as well as five-role mother consilium and records duration',async()=>{
+ vi.mocked(analyzeECGOpusImage).mockResolvedValueOnce({
+  report:'Unverified ECG observations with clear uncertainty and differential',
+  models:['Gemini','Opus'],costUsd:0.075,originalSignalNeuroKitMeasured:false
+ } as never);
+ const out=await runUnifiedClinicalChat({caseText:'Independently interpret this source ECG.',
+  studies:[{kind:'ecg-opus',sourceId:'ecgCost',input:eye}]});
+ expect(out.totalConsiliumCostUsd).toBe(0.12);
+ expect(out.totalSpecialistCostUsd).toBe(0.075);
+ expect(out.totalEstimatedCostUsd).toBe(0.195);
+ expect(out.elapsedMs).toBeGreaterThanOrEqual(0);
+ expect(out.cpuDetectorRuns).toHaveLength(0);
+});
