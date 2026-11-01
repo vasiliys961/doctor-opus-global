@@ -23,7 +23,7 @@ export function getDiagnosticApiFailureSummary(): Record<string, number> { retur
 function classifyProviderFailure(error: unknown): string {
   const e = error as { name?: string; message?: string } | null;
   const message = String(e?.message || '');
-  const code = message.match(/OpenRouter API error: (\\d{3})/);
+  const code = message.match(/OpenRouter API error: (\d{3})/);
   if (code) return 'http_' + code[1];
   if (/abort|timeout|timed out/i.test(String(e?.name || '') + ' ' + message)) return 'timeout';
   if (/All providers unavailable/i.test(message)) return 'providers_unavailable';
