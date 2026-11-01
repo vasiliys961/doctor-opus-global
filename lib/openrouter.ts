@@ -27,7 +27,7 @@ export const MODELS = {
   HAIKU: 'anthropic/claude-haiku-4.5',                   // Claude Haiku 4.5
   LLAMA: 'meta-llama/llama-3.2-90b-vision-instruct',     // Резерв
   GEMINI_3_FLASH: 'google/gemini-3.8-flash',       // Gemini 3.8 Flash
-  GEMINI_3_PRO: 'google/gemini-3.8-flash',         // Secondary vision model (same as flash)
+  GEMINI_3_PRO: 'google/gemini-3.1-pro-preview',       // Experimental benchmark: distinct image escalation for difficult cases
   FABLE_5: 'anthropic/claude-fable-5.1',           // Claude Fable 5.1 — deep clinical reasoning
   FUGU_ULTRA: 'sakana/fugu-ultra',                       // Sakana Fugu Ultra — резервная модель без прямых мед. бенчмарков
 };
@@ -173,7 +173,7 @@ function shouldUseProByRouting(modality: string, routing: RoutingMetadata): { es
   const reasons: string[] = [];
   const normalizedModality = (modality || '').toLowerCase();
   const highRiskModalities = new Set(['ct', 'mri', 'histology', 'mammography']);
-  const forceProHighRisk = isTruthyEnv(process.env.SMART_ROUTING_FORCE_PRO_HIGH_RISK, true);
+  const forceProHighRisk = isTruthyEnv(process.env.SMART_ROUTING_FORCE_PRO_HIGH_RISK, false);
 
   if (forceProHighRisk && highRiskModalities.has(normalizedModality)) {
     reasons.push('high_risk_modality');
