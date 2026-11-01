@@ -41,7 +41,7 @@ Source: Nevit Dilmen, Wikimedia Commons, CC BY-SA 3.0. Source descriptive captio
 - Keep both A/B reports for physician visual adjudication before defaulting to exam-region prompts.
 
 Original A/B model output artifacts:
-- [Baseline full reports in 41304279185? No; thyroid artifact is 41294018180](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41294018180) 
+- [Ultrasound baseline and anatomy-aware runs: 41294018180](https://github.com/vasiliys961/doctor-opus-global/actions/runs/41294018180)
 - `doctor-opus-public-dermoscopy-two` artifact latest attempts include folder `thyroid-ultrasound-public-three/`.
 - Baseline no-region run artifact id `13091781340`; anatomy-context rerun artifact id `13092070426`.
 
