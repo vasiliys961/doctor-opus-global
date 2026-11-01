@@ -1,0 +1,37 @@
+name: Opus Benchmark SCT multiagent clinical reasoning pilot
+on:
+  push:
+    branches: [feat/mast-consilium-adapter]
+    paths: ['.github/workflows/opus-benchmark-sct-consilium.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  clinical-reasoning-paired:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        working-directory: benchmark
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_BASE_URL: https://openrouter.ai/api/v1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/mast-consilium-adapter
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install separate benchmark runtime
+        run: npm ci --no-audit --no-fund
+      - name: Evaluate original SCT expert-alignment on 4 matched clinical cases
+        run: npx vitest --config vitest.live.config.ts run lib/benchmark/mast.sct.consilium.paired.live.test.ts --testTimeout=5400000
+      - name: Preserve predictions, original IDs, costs and scored differences
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opus-benchmark-sct-full-consilium-versus-fast
+          path: benchmark/internal-results/sct-consilium-paired/
+          retention-days: 21
+          if-no-files-found: warn
