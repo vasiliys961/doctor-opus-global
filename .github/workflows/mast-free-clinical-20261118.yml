@@ -1,0 +1,37 @@
+name: MAST public free clinical models pilot
+on:
+  push:
+    branches: ['bench/free-clinical-models-20261118']
+    paths:
+      - '.github/workflows/mast-free-clinical-20261118.yml'
+      - 'benchmark/scripts/free-clinical-models-20261118.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check secret availability without exposing value
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "::error::OPENROUTER_API_KEY absent from this repository"
+            exit 2
+          fi
+      - name: Evaluate three exact public MAST cases and two original chest X-rays
+        run: python benchmark/scripts/free-clinical-models-20261118.py
+      - name: Store public-only answers and measured usage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mast-free-clinical-public-20261118
+          path: benchmark/internal-results/free-clinical-models-20261118/
+          retention-days: 14
+          if-no-files-found: warn
