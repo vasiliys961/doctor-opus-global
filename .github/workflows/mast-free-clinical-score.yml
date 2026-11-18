@@ -1,0 +1,62 @@
+name: MAST original rubrics score free clinical pilot
+on:
+  push:
+    branches: ['bench/free-clinical-models-20261118']
+    paths: ['.github/workflows/mast-free-clinical-score.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  rubric:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MAST_OPENROUTER_JUDGE_CAP_USD: '0.5'
+      MAST_JUDGE_LEDGER: ${{ github.workspace }}/judge-ledger.jsonl
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Get exact earlier public model outputs
+        run: |
+          mkdir -p source-results
+          gh run download 44393866786 --repo "${{ github.repository }}" --name mast-free-clinical-public-20261118 --dir source-results
+          python - <<'PY'
+          import json,pathlib
+          lines=(pathlib.Path('source-results')/'noharm-nemotron-ultra.jsonl').read_text().splitlines()
+          rows=[json.loads(s) for s in lines if s.strip()]
+          assert len(rows)==3 and {r["id"] for r in rows}=={"Card001","Endo009","GI002"}
+          assert all(len(r['response'])>200 for r in rows)
+          PY
+      - name: Clone original MAST scorer and pinned public rubrics
+        run: |
+          git clone -q https://github.com/ARISENetwork/mast.git mast-reference
+          git -C mast-reference checkout -q 57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          pip install -q -r mast-reference/benchmarks/donoharm/requirements.txt
+          cp benchmark/scripts/noharm-openrouter-judge-transport.py mast-reference/benchmarks/donoharm/judge/gemini_sdk.py
+          mkdir -p mast-reference/results/raw/donoharm/default
+          cp source-results/noharm-nemotron-ultra.jsonl mast-reference/results/raw/donoharm/default/nemotron-ultra-free.jsonl
+      - name: Original two-stage matching and review clinical action rubric
+        working-directory: mast-reference/benchmarks/donoharm
+        run: |
+          cat > config/models/nemotron-ultra-free.yaml <<'YAML'
+          model:
+            name: nemotron-ultra-free
+            platform: openrouter
+            model_id: nvidia/nemotron-3-ultra-550b-a55b:free
+          YAML
+          python score.py --model-config config/models/nemotron-ultra-free.yaml --benchmark-config config/benchmark.yaml --k 1 --cases Card001,Endo009,GI002 --threads 1
+      - name: Preserve original MAST rubric score, flags, and billed judge cost
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nemotron-ultra-mast-public-three-judged
+          path: |
+            mast-reference/results/scores/donoharm/default/nemotron-ultra-free.csv
+            mast-reference/results/raw/donoharm/default/nemotron-ultra-free_judged.jsonl
+            judge-ledger.jsonl
+          retention-days: 14
+          if-no-files-found: warn
