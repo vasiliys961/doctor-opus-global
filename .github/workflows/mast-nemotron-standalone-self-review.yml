@@ -1,0 +1,29 @@
+name: Standalone Nemotron - free 12 clinical cases, no judge
+on:
+  push:
+    branches: ['bench/nemotron-opus-paired-20261119']
+    paths: ['.github/workflows/mast-nemotron-standalone-self-review.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  free-clinical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run FREE Nemotron on frozen 12 original public cases, no paid judge
+        run: python benchmark/scripts/standalone-nemotron12-20261119.py
+      - name: Preserve 12 answers and logs for manual clinical review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nemotron12-standalone-free-nojudge
+          path: benchmark/internal-results/standalone-nemotron12-20261119/
+          retention-days: 21
+          if-no-files-found: warn
