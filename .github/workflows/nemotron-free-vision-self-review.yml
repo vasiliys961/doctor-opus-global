@@ -1,0 +1,33 @@
+name: Free Nemotron VL independent ECG and chest-X-ray assessment
+on:
+  push:
+    branches: ['bench/nemotron-opus-paired-20261119']
+    paths: ['.github/workflows/nemotron-free-vision-self-review.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  self-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU only tools for original PTB-XL ECG rendering
+        run: python -m pip install -q numpy matplotlib pillow
+      - name: Reconstruct exact 20 original PTB-XL public ECG images
+        run: python benchmark/scripts/prepare-free-ecg-ptbxl-20261118.py
+      - name: Free Nemotron 3.5 Super VL, independent 10 ECG and 10 X-ray reads
+        run: python benchmark/scripts/nemotron-free-ecg-xray-self-eval-20261119.py
+      - name: Save evidence, original public images and case-level answers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nemotron-free-ecg-xray-selfreview-20261119
+          path: benchmark/internal-results/nemotron-free-ecg-xray-20261119/
+          retention-days: 21
+          if-no-files-found: warn
