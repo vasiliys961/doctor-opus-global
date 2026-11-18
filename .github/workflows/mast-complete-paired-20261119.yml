@@ -1,0 +1,106 @@
+name: Finish paired Opus ± Nemotron clinical test without rebilling 9 cases
+on:
+  push:
+    branches: ['bench/nemotron-opus-paired-20261119']
+    paths: ['.github/workflows/mast-complete-paired-20261119.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  resume-to-twelve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore all original 9 complete pairs, never re-bill them
+        run: |
+          mkdir -p benchmark/internal-results/opus-nemotron-paired-20261119
+          gh run download 44403229246 --repo "${{ github.repository }}" --name paired-opus-nemotron-public-inference --dir benchmark/internal-results/opus-nemotron-paired-20261119
+          test -s benchmark/internal-results/opus-nemotron-paired-20261119/opus-alone.jsonl
+      - name: Generate only three missing matched pairs, total new spend capped $1
+        run: python benchmark/scripts/resume-opus-nemotron-paired-20261119.py
+      - name: Save 12 original paired outputs and billing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opus-nemotron-twelve-pairs-complete
+          path: benchmark/internal-results/opus-nemotron-paired-20261119/
+          retention-days: 21
+          if-no-files-found: warn
+  score-with-original-rubric:
+    needs: resume-to-twelve
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    env:
+      GH_TOKEN: ${{ github.token }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MAST_OPENROUTER_JUDGE_CAP_USD: '1.50'
+      MAST_JUDGE_LEDGER: ${{ github.workspace }}/judge-cost-ledger.jsonl
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download same-run 12 responses
+        run: |
+          mkdir -p benchmark/internal-results/opus-nemotron-paired-20261119
+          gh run download "${{ github.run_id }}" --repo "${{ github.repository }}" --name opus-nemotron-twelve-pairs-complete --dir benchmark/internal-results/opus-nemotron-paired-20261119
+          python - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('benchmark/internal-results/opus-nemotron-paired-20261119')
+          names=('opus-alone.jsonl','opus-plus-nemotron.jsonl')
+          data=[[json.loads(s) for s in (root/name).read_text().splitlines() if s.strip()] for name in names]
+          assert len(data[0])==len(data[1])==12
+          assert len({x['id'] for x in data[0]})==len({x['id'] for x in data[1]})==12
+          assert {x['id'] for x in data[0]}=={x['id'] for x in data[1]}
+          PY
+      - name: Clone pinned original MAST evaluation, using existing OpenRouter transport
+        run: |
+          git clone -q https://github.com/ARISENetwork/mast.git mast-reference
+          git -C mast-reference checkout -q 57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          pip install -q -r mast-reference/benchmarks/donoharm/requirements.txt
+          cp benchmark/scripts/noharm-openrouter-judge-transport.py mast-reference/benchmarks/donoharm/judge/gemini_sdk.py
+          mkdir -p mast-reference/results/raw/donoharm/default
+          cp benchmark/internal-results/opus-nemotron-paired-20261119/opus-alone.jsonl mast-reference/results/raw/donoharm/default/opus-solo12.jsonl
+          cp benchmark/internal-results/opus-nemotron-paired-20261119/opus-plus-nemotron.jsonl mast-reference/results/raw/donoharm/default/opus-audit12.jsonl
+          cat > mast-reference/benchmarks/donoharm/config/models/opus-solo12.yaml <<'YAML'
+          model:
+            name: opus-solo12
+            platform: openrouter
+            model_id: anthropic/claude-opus-5.5
+          YAML
+          cat > mast-reference/benchmarks/donoharm/config/models/opus-audit12.yaml <<'YAML'
+          model:
+            name: opus-audit12
+            platform: openrouter
+            model_id: anthropic/claude-opus-5.5
+          YAML
+      - name: Evaluate paired 12 cases on original unmodified MAST clinical rubrics
+        run: |
+          cd mast-reference/benchmarks/donoharm
+          CASES=Card001,Card002,Derm001,Endo009,GI002,All001,Heme002,ID003,Nephro003,Neuro003,Pulm001,GI004
+          python score.py --model-config config/models/opus-solo12.yaml --benchmark-config config/benchmark.yaml --k 1 --cases "$CASES" --threads 1
+          python score.py --model-config config/models/opus-audit12.yaml --benchmark-config config/benchmark.yaml --k 1 --cases "$CASES" --threads 1
+      - name: Report improvement and possible safety regressions
+        run: python benchmark/scripts/report-opus-nemotron-paired-20261119.py
+      - name: Preserve rubric judgements, paired report and actual judge cost
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opus-nemotron-12-original-mast-scores
+          path: |
+            benchmark/internal-results/opus-nemotron-paired-20261119/REPORT.md
+            benchmark/internal-results/opus-nemotron-paired-20261119/paired-report.json
+            mast-reference/results/scores/donoharm/default/opus-solo12.csv
+            mast-reference/results/scores/donoharm/default/opus-audit12.csv
+            mast-reference/results/raw/donoharm/default/opus-solo12_judged.jsonl
+            mast-reference/results/raw/donoharm/default/opus-audit12_judged.jsonl
+            judge-cost-ledger.jsonl
+          retention-days: 21
+          if-no-files-found: warn
