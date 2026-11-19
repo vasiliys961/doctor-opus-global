@@ -18,7 +18,7 @@ The first four answer independently, without seeing each other; only the synthes
 
 | Profile | hypothesis | testChooser | challenger | stewardship | checklist | Billing |
 | --- | --- | --- | --- | --- | --- | --- |
-| \`free\` | Nemotron 3 Ultra :free | Nemotron 3.5 Super VL :free | Ling 3.2 Flash :free | Nemotron 3.5 Lightning :free | Nemotron 3 Ultra :free | **Only if catalog confirms all input/output token rates exactly zero** |
+| \`free\` | Nemotron 3 Ultra :free | Nemotron 3 Ultra :free | Nemotron 3.5 Lightning :free | Nemotron 3 Ultra :free | Nemotron 3 Ultra :free | **Only if catalog confirms all input/output token rates exactly zero** |
 | \`light\` (future opt-in, not enabled in CI) | Haiku 5.5 | Gemini 3.1 Flash Lite | Nemotron 3 Ultra :free | Gemini 3.5 Flash Lite | Haiku 5.5 | Explicit separate approval, cap and actual usage ledger needed |
 
 \`free\` calls MUST stop rather than auto-fallback to paid; \`light\` requires explicit \`ACADEMY_PAID_EXPLICIT_APPROVAL=YES\` and a real positive \`--max-total-usd\` <= $0.50. This mechanism is NOT a blanket spending approval; no automated light workflow is configured. Per-request conservative cost reservations use the live OpenRouter price catalog, followed by actual \`usage.cost\` checks. No patient-identifying content.
@@ -61,7 +61,7 @@ A low-level regex or similarity metric must not award clinical correctness. The 
 - \`benchmark/scripts/academy-cheap-ensemble-20261119.py\` — isolated stdlib runner, five-role sequential workflow, actual free-catalog validation and append-only provider evidence.
 - \`benchmark/scripts/test_academy_cheap_ensemble.py\` — offline contract tests.
 - \`.github/workflows/academy-free-ensemble-20261119.yml\` — free-only CI, fixed publicly available synthetic MAST cases and preserved artifacts.
-- **No production routing, Copilot or case-storage changes.** This is a research kernel and deployment gate, not yet a ready-to-use training UI.
+- **No production routing, Copilot or case-storage changes.** This is a research kernel and deployment gate, a first static offline training UI, not yet an integrated interactive live workstation.
 
 ### Immediate readiness criteria
 
