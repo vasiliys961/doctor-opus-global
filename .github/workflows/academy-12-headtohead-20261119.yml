@@ -1,0 +1,72 @@
+name: Academy 12-case free and mixed full-role benchmark
+on:
+  push:
+    branches: ['bench/academy-full12-ensemble-20261119']
+    paths: ['.github/workflows/academy-12-headtohead-20261119.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  offline-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile script and offline unit tests
+        run: |
+          python -m py_compile benchmark/scripts/academy-12-headtohead-20261119.py
+          python -m unittest discover -s benchmark/scripts -p 'test_academy_12_headtohead.py' -v
+  free-full12:
+    runs-on: ubuntu-latest
+    needs: offline-contracts
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore already completed two free public cases — no rerun or rebilling
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p benchmark/internal-results/academy-free-prior/free
+          gh api repos/${{ github.repository }}/actions/artifacts/14556631480/zip > /tmp/academy-free-two.zip
+          unzip -oq /tmp/academy-free-two.zip -d benchmark/internal-results/academy-free-prior
+          test -s benchmark/internal-results/academy-free-prior/free/responses.jsonl
+      - name: Free ensemble on twelve original public cases (ten remaining calls groups)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python benchmark/scripts/academy-12-headtohead-20261119.py --profile free --budget-usd 0 --limit 12
+      - name: Save independent voices, clinical missing flags and actual spending
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: academy-12-free-ensemble-20261119
+          path: benchmark/internal-results/academy-12-headtohead-20261119/free/
+          retention-days: 21
+          if-no-files-found: warn
+  mixed-full12:
+    runs-on: ubuntu-latest
+    needs: offline-contracts
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Mixed Haiku, Gemini Lite and free Nemotron roles — <= USD 0.20 actual test spending
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python benchmark/scripts/academy-12-headtohead-20261119.py --profile mixed --budget-usd 0.20 --limit 12
+      - name: Preserve mixed-role evidence, billable provider costs and incompleteness
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: academy-12-mixed-ensemble-20261119
+          path: benchmark/internal-results/academy-12-headtohead-20261119/mixed/
+          retention-days: 21
+          if-no-files-found: warn
