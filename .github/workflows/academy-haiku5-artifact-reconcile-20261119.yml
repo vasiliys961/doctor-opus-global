@@ -27,7 +27,8 @@ jobs:
             gh run download 44595020491 --repo "${{ github.repository }}" --name "haiku5-shard-$shard" --dir "$base"
           done
           mkdir -p benchmark/internal-results/haiku-archived-20261119
-          gh run download 44568505502 --repo "${{ github.repository }}" --name haiku-all-archive-20261119 --dir benchmark/internal-results/haiku-archived-20261119
+          gh api repos/${{ github.repository }}/actions/artifacts/14552874227/zip > /tmp/haiku-original-successful.zip
+          unzip -oq /tmp/haiku-original-successful.zip -d benchmark/internal-results/haiku-archived-20261119
           echo '--- ARTIFACT FILE STRUCTURE ---'
           find benchmark/internal-results/academy-12-haiku5-20261119 benchmark/internal-results/haiku-archived-20261119 -type f | head -70
       - name: Generate validated twelve-case report without new inference
