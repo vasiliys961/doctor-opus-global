@@ -1,0 +1,111 @@
+name: Academy Haiku 5.5 solo vs five-role MAST12 study
+on:
+  push:
+    branches:
+      - bench/haiku-five-role-mast12-20261119
+    paths:
+      - .github/workflows/academy-haiku5-five-role-20261119.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: haiku5-experiment-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check five-role single-Haiku contract and study limits
+        run: |
+          python -m py_compile benchmark/scripts/academy-haiku5-mast12-20261119.py benchmark/scripts/academy-haiku5-report-20261119.py
+          python - <<'PY'
+          import importlib.util
+          spec=importlib.util.spec_from_file_location("study","benchmark/scripts/academy-haiku5-mast12-20261119.py")
+          module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+          assert len(module.CASE_IDS)==12
+          assert len(module.ROLE_IDS)==5
+          assert set(module.ROLE_MODELS["haiku5"].values())=={"anthropic/claude-haiku-5.5"}
+          assert min(module.TOKEN_CAPS.values())>=6500
+          print("Pinned MAST 12 cases, sole Haiku 5.5 in all five roles")
+          PY
+  haiku-shards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    needs: contract
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - start: 0
+            label: '00'
+          - start: 3
+            label: '03'
+          - start: 6
+            label: '06'
+          - start: 9
+            label: '09'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Haiku five roles on 3 original MAST cases, USD 0.10 shard cap
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python benchmark/scripts/academy-haiku5-mast12-20261119.py --profile haiku5 --budget-usd 0.10 --limit 3 --start ${{ matrix.start }}
+      - name: Preserve individual role evidence and provider charges
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: haiku5-shard-${{ matrix.label }}
+          path: benchmark/internal-results/academy-12-haiku5-20261119/haiku5/shard-*/
+          if-no-files-found: warn
+          retention-days: 30
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: haiku-shards
+    if: always()
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Collect shards and archived single-Haiku answers (no repeated solo calls)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p benchmark/internal-results/academy-12-haiku5-20261119/haiku5
+          for start in 00 03 06 09; do
+            mkdir -p "benchmark/internal-results/academy-12-haiku5-20261119/haiku5/shard-$start"
+            gh run download "${{ github.run_id }}" --repo "${{ github.repository }}" --name "haiku5-shard-$start" --dir "benchmark/internal-results/academy-12-haiku5-20261119/haiku5/shard-$start" || true
+          done
+          mkdir -p benchmark/internal-results/haiku-archived-20261119
+          gh run download 44568505502 --repo "${{ github.repository }}" --name haiku-all-archive-20261119 --dir benchmark/internal-results/haiku-archived-20261119
+      - name: Build technical comparison with safety caveats and all responses
+        run: python benchmark/scripts/academy-haiku5-report-20261119.py
+      - name: Preserve finished research outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: haiku5-full12-comparison-report
+          path: benchmark/results/2026-11-19-haiku5-five-role/
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Commit PUBLIC MAST study results to isolated benchmark branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f benchmark/results/2026-11-19-haiku5-five-role/
+          git commit -m "results(academy): Haiku solo vs five-role MAST12 evidence" || true
+          git push origin HEAD:bench/haiku-five-role-mast12-20261119
