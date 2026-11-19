@@ -1,0 +1,38 @@
+name: Academy FREE twelve-case targeted-only completion
+on:
+  push:
+    branches: ['bench/academy-full12-ensemble-20261119']
+    paths: ['.github/workflows/academy-12-repair-free-20261119.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  zero-cost-repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore original 12-case free answers, all billed exactly zero
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m py_compile benchmark/scripts/academy-12-repair-free-20261119.py
+          mkdir -p benchmark/internal-results/academy12-free-original/free
+          gh api repos/${{ github.repository }}/actions/artifacts/14560172845/zip > /tmp/academy-12-free-original.zip
+          unzip -oq /tmp/academy-12-free-original.zip -d benchmark/internal-results/academy12-free-original/free
+          test -s benchmark/internal-results/academy12-free-original/free/responses.jsonl
+      - name: Repeat ONLY incomplete free roles and affected final synthesis, price must remain USD 0
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python benchmark/scripts/academy-12-repair-free-20261119.py
+      - name: Preserve all original-vs-revised voices and factual cost proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: academy-12-free-targeted-repair-20261119
+          path: benchmark/internal-results/academy12-free-repaired/
+          retention-days: 21
+          if-no-files-found: warn

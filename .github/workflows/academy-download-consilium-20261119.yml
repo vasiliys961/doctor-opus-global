@@ -1,0 +1,26 @@
+name: Extract original full Consilium 12-case baseline for Academy offline audit
+on:
+  push:
+    branches: ['bench/academy-full12-ensemble-20261119']
+    paths: ['.github/workflows/academy-download-consilium-20261119.yml']
+permissions:
+  contents: read
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Save original public 30-case Consilium answers and official-rubric judge rows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p full-consilium
+          gh api repos/${{ github.repository }}/contents/benchmark/results/2026-10-31-noharm-open30-k1/original-responses.jsonl --jq .content | base64 -d > full-consilium/original-responses.jsonl
+          gh api repos/${{ github.repository }}/contents/benchmark/results/2026-10-31-noharm-open30-k1/official-rubric-alternate-transport-judged.jsonl --jq .content | base64 -d > full-consilium/judged.jsonl
+          test -s full-consilium/original-responses.jsonl
+          test -s full-consilium/judged.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: academy-full-consilium-archived-source
+          path: full-consilium/
+          retention-days: 21

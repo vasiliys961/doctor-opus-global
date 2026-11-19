@@ -1,0 +1,35 @@
+name: Archive original 12 public MAST case rubrics for independent physician review
+on:
+  push:
+    branches: ['bench/academy-full12-ensemble-20261119']
+    paths: ['.github/workflows/academy-original-rubrics-20261119.yml']
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Fetch pinned original MAST criteria AFTER all clinical inference
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p public-rubrics
+          SHA=57a12c5490f3a7a6b0a6ce4e0d49f8e393ff49ee
+          for ID in Card001 Card002 Derm001 Endo009 GI002 All001 Heme002 ID003 Nephro003 Neuro003 Pulm001 GI004; do
+            gh api "repos/ARISENetwork/mast/contents/benchmarks/donoharm/dataset/rubrics/${ID}.json?ref=$SHA" --jq .content | base64 -d > "public-rubrics/${ID}.json"
+            test -s "public-rubrics/${ID}.json"
+          done
+          python - <<'PY'
+          import pathlib,json
+          files=list(pathlib.Path('public-rubrics').glob('*.json'))
+          assert len(files)==12
+          for f in files:assert json.loads(f.read_text())['id']==f.stem
+          print('Original 12 source rubrics verified; not used during model inference')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: academy-original-mast-12-rubrics-20261119
+          path: public-rubrics/
+          retention-days: 21
