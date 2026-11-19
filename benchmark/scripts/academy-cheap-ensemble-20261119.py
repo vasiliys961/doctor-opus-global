@@ -38,7 +38,7 @@ PROFILES = {
    "hypothesis": "nvidia/nemotron-3-ultra-550b-a55b:free",
    "testChooser": "nvidia/nemotron-3.5-super-vl:free",
    "challenger": "inclusionai/ling-3.2-flash:free",
-   "stewardship": "inclusionai/ling-3.0-flash-sante:free",
+   "stewardship": "nvidia/nemotron-3.5-lightning:free",
    "checklist": "nvidia/nemotron-3-ultra-550b-a55b:free",
  },
  "light": {
