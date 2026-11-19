@@ -23,6 +23,22 @@ jobs:
         run: python -m unittest discover -s benchmark/scripts -p 'test_academy_cheap_ensemble.py' -v
       - name: Strict FREE OpenRouter models, two exact historical cases, zero paid inference
         run: python benchmark/scripts/academy-cheap-ensemble-20261119.py --profile free --case-limit 2 --max-total-usd 0
+      - name: Restore previous saved model answers for zero-cost Academy Replay
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          mkdir -p benchmark/internal-results/haiku-all-archive-20261119 benchmark/internal-results/standalone-nemotron12-20261119 benchmark/internal-results/opus-nemotron-paired-20261119
+          gh api repos/${{ github.repository }}/actions/artifacts/14552874227/zip > /tmp/haiku-archive.zip
+          unzip -oq /tmp/haiku-archive.zip -d benchmark/internal-results/haiku-all-archive-20261119
+          gh api repos/${{ github.repository }}/actions/artifacts/14472794770/zip > /tmp/nemotron-archive.zip
+          unzip -oq /tmp/nemotron-archive.zip -d benchmark/internal-results/standalone-nemotron12-20261119
+          gh api repos/${{ github.repository }}/actions/artifacts/14473839853/zip > /tmp/opus-archive.zip
+          unzip -oq /tmp/opus-archive.zip -d benchmark/internal-results/opus-nemotron-paired-20261119
+      - name: Render standalone offline training case reviewer — no inference
+        if: always()
+        run: python benchmark/scripts/render_academy_public_replay.py
       - name: Preserve all source evidence, missing role flags, provider status and actual costs
         if: always()
         uses: actions/upload-artifact@v4
