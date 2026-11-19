@@ -126,9 +126,15 @@ def main():
    # Only final synthesis sees the independent voices. The first four do not see each other.
    context=cases[cid]["prompt"]
    if role=="checklist":
+    missing=[rid for rid in ROLE_ORDER[:4] if not any(x["role"]==rid and x["status"]=="ok" for x in first_four)]
     context+="\n\nINDEPENDENT UNVERIFIED OPINIONS (not patient facts):\n"+(
       "\n\n".join(f"{x['role']} [{x['model']}]: {x['answer']}" for x in first_four if x.get("status")=="ok")
       or "(none available)")
+    context+="\n\nREQUIRED ROLE COMPLETENESS RECORD: "+(
+      "All four preliminary voices completed." if not missing else
+      "MISSING OR TRUNCATED ROLES: "+", ".join(missing)+". "
+      "This is an INCOMPLETE consilium. Never claim a unanimous decision, "
+      "four completed opinions, or clinical clearance. Flag explicitly for physician review.")
    sys=("You are a functional participant in a research-only TRAINING simulation "
      "of a physician's multi-agent clinical workflow. "+ROLE_TASKS[role]+
      " Original data can be incomplete; do not fabricate observations, lab values, "
@@ -190,6 +196,10 @@ def main():
    "role_calls":len(outputs),"valid_role_responses":sum(x["status"]=="ok" for x in outputs),
    "spent_usd":round(spent,8),"hard_cap_usd":a.max_total_usd,
    "clinical_quality":"NOT SCORED; independent rubric-based physician review required",
+   "case_stage_status":{cid:{
+      "complete":all(any(r["case"]==cid and r["role"]==rid and r["status"]=="ok" for r in outputs) for rid in ROLE_ORDER),
+      "missing_or_incomplete":[rid for rid in ROLE_ORDER if not any(r["case"]==cid and r["role"]==rid and r["status"]=="ok" for r in outputs)]
+     } for cid in CASE_IDS[:a.case_limit]},
    "missing_roles_are_not_zero_accuracy":True,"no_patient_data":True}
  (out/"summary.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2)+"\n")
  print("ACADEMY_SUMMARY",json.dumps(summary,ensure_ascii=False),flush=True)
