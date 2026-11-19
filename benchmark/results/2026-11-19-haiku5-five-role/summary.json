@@ -1,12 +1,181 @@
 {
   "model": "anthropic/claude-haiku-5.5",
   "cases": 12,
-  "five_role_calls": 0,
-  "complete_five_role_cases": 0,
-  "five_role_billed_usd": 0,
-  "solo_archived_cases": 0,
-  "solo_archived_usd": 0,
+  "five_role_calls": 60,
+  "complete_five_role_cases": 12,
+  "five_role_billed_usd": 0.0994698,
+  "solo_archived_cases": 12,
+  "solo_archived_usd": 0.010259,
   "clinical_accuracy": null,
   "clinical_safety": null,
-  "shards": []
+  "shards": [
+    {
+      "profile": "haiku5",
+      "planned_cases": 3,
+      "shard_start": 0,
+      "actual_cases_with_final": 3,
+      "all_five_roles_complete": 3,
+      "case_results": {
+        "Card001": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0071247,
+          "archived": false
+        },
+        "Card002": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0076639,
+          "archived": false
+        },
+        "Derm001": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0065568,
+          "archived": false
+        }
+      },
+      "billed_new_usd": 0.0213454,
+      "hard_cap_new_usd": 0.1,
+      "archived_free_reused": 0,
+      "model_errors_are_not_clinical_zero_scores": true,
+      "clinical_score": "NOT AUTOMATICALLY SCORED; compare exact rubrics and clinician adjudication",
+      "training_only": true
+    },
+    {
+      "profile": "haiku5",
+      "planned_cases": 3,
+      "shard_start": 3,
+      "actual_cases_with_final": 3,
+      "all_five_roles_complete": 3,
+      "case_results": {
+        "Endo009": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0110113,
+          "archived": false
+        },
+        "GI002": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0091334,
+          "archived": false
+        },
+        "All001": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0094747,
+          "archived": false
+        }
+      },
+      "billed_new_usd": 0.0296194,
+      "hard_cap_new_usd": 0.1,
+      "archived_free_reused": 0,
+      "model_errors_are_not_clinical_zero_scores": true,
+      "clinical_score": "NOT AUTOMATICALLY SCORED; compare exact rubrics and clinician adjudication",
+      "training_only": true
+    },
+    {
+      "profile": "haiku5",
+      "planned_cases": 3,
+      "shard_start": 6,
+      "actual_cases_with_final": 3,
+      "all_five_roles_complete": 3,
+      "case_results": {
+        "Heme002": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0067277,
+          "archived": false
+        },
+        "ID003": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0077802,
+          "archived": false
+        },
+        "Nephro003": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0091087,
+          "archived": false
+        }
+      },
+      "billed_new_usd": 0.0236166,
+      "hard_cap_new_usd": 0.1,
+      "archived_free_reused": 0,
+      "model_errors_are_not_clinical_zero_scores": true,
+      "clinical_score": "NOT AUTOMATICALLY SCORED; compare exact rubrics and clinician adjudication",
+      "training_only": true
+    },
+    {
+      "profile": "haiku5",
+      "planned_cases": 3,
+      "shard_start": 9,
+      "actual_cases_with_final": 3,
+      "all_five_roles_complete": 3,
+      "case_results": {
+        "Neuro003": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0103243,
+          "archived": false
+        },
+        "Pulm001": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0073359,
+          "archived": false
+        },
+        "GI004": {
+          "voices": 5,
+          "ok_voices": 5,
+          "complete_final": true,
+          "fully_complete": true,
+          "incomplete_roles": [],
+          "usd": 0.0072282,
+          "archived": false
+        }
+      },
+      "billed_new_usd": 0.0248884,
+      "hard_cap_new_usd": 0.1,
+      "archived_free_reused": 0,
+      "model_errors_are_not_clinical_zero_scores": true,
+      "clinical_score": "NOT AUTOMATICALLY SCORED; compare exact rubrics and clinician adjudication",
+      "training_only": true
+    }
+  ]
 }
