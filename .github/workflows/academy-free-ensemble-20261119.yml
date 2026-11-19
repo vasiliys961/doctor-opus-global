@@ -1,0 +1,33 @@
+name: Academy free five-role physician-training ensemble (public cases only)
+on:
+  push:
+    branches: ['bench/academy-cheap-ensemble-20261119']
+    paths: ['.github/workflows/academy-free-ensemble-20261119.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile isolated research script
+        run: python -m py_compile benchmark/scripts/academy-cheap-ensemble-20261119.py
+      - name: Offline no-billing and role-contract tests
+        run: python -m unittest discover -s benchmark/scripts -p 'test_academy_cheap_ensemble.py' -v
+      - name: Strict FREE OpenRouter models, two exact historical cases, zero paid inference
+        run: python benchmark/scripts/academy-cheap-ensemble-20261119.py --profile free --case-limit 2 --max-total-usd 0
+      - name: Preserve all source evidence, missing role flags, provider status and actual costs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: academy-five-role-free-ensemble-20261119
+          path: benchmark/internal-results/academy-cheap-ensemble-20261119/
+          retention-days: 21
+          if-no-files-found: warn
