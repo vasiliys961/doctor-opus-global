@@ -11,16 +11,16 @@ def rows(path):
  return [json.loads(x) for x in path.read_text(encoding="utf8").splitlines() if x.strip()]
 by_id={}
 shard_summaries=[]
-for shard in sorted(ROOT.glob("shard-*")):
- p=shard/"responses.jsonl"
- if not p.exists():continue
+for p in sorted(ROOT.rglob("responses.jsonl")):
+ if "shard-" not in str(p):continue
+ shard=p.parent
  for x in rows(p):
   if x.get("case") not in IDS:raise RuntimeError("Unexpected case ID")
   by_id.setdefault(x["case"],[]).append(x)
  sp=shard/"summary.json"
  if sp.exists():shard_summaries.append(json.loads(sp.read_text()))
 solos=[]
-for p in SOLO.rglob("responses.jsonl"):
+for p in SOLO.rglob("*.jsonl"):
  items=[x for x in rows(p) if x.get("arm")=="standalone_12_matched"]
  if len(items)==12:solos=items;break
 solo={x["id"]:x for x in solos}
@@ -30,6 +30,8 @@ full=sum(len(by_id.get(cid,[]))==5 and {x.get("role") for x in by_id[cid]}==set(
 paid=sum(price(x) for xs in by_id.values() for x in xs)
 allrows=[x for cid in IDS for x in by_id.get(cid,[])]
 if len(allrows)>60:raise RuntimeError("Duplicate paid results")
+if len(allrows)<60 or full<12 or len(solos)!=12:
+ raise RuntimeError(f"Not enough archive material: roles={len(allrows)}, complete={full}, solo={len(solos)}")
 (OUT/"five-roles.jsonl").write_text("\n".join(json.dumps(x,ensure_ascii=False) for x in allrows)+"\n",encoding="utf8")
 if solos:(OUT/"solo-original.jsonl").write_text("\n".join(json.dumps(x,ensure_ascii=False) for x in solos)+"\n",encoding="utf8")
 summary={"model":"anthropic/claude-haiku-5.5","cases":12,"five_role_calls":len(allrows),
