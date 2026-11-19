@@ -1,0 +1,38 @@
+name: Academy mixed ensemble resume ONLY truncated clinical roles
+on:
+  push:
+    branches: ['bench/academy-full12-ensemble-20261119']
+    paths: ['.github/workflows/academy-12-repair-mixed-20261119.yml']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate repair source and original paid experiment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m py_compile benchmark/scripts/academy-12-repair-mixed-20261119.py
+          mkdir -p benchmark/internal-results/academy12-mixed-original/mixed
+          gh api repos/${{ github.repository }}/actions/artifacts/14559291222/zip > /tmp/academy-12-mixed-original.zip
+          unzip -oq /tmp/academy-12-mixed-original.zip -d benchmark/internal-results/academy12-mixed-original/mixed
+          test -s benchmark/internal-results/academy12-mixed-original/mixed/responses.jsonl
+      - name: Only incomplete independent voices and their affected checklist syntheses
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python benchmark/scripts/academy-12-repair-mixed-20261119.py
+      - name: Preserve 12-case merged evidence and cumulative actual spend
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: academy-12-mixed-targeted-repair-20261119
+          path: benchmark/internal-results/academy12-mixed-repaired/
+          retention-days: 21
+          if-no-files-found: warn
