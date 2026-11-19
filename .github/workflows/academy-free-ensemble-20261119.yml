@@ -31,3 +31,5 @@ jobs:
           path: benchmark/internal-results/academy-cheap-ensemble-20261119/
           retention-days: 21
           if-no-files-found: warn
+
+# Free model catalog revalidation: Nemotron 3.5 Lightning instead of unavailable Ling Santé.
