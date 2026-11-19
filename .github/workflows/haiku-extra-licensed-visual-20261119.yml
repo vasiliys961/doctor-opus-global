@@ -1,0 +1,44 @@
+name: Haiku public dermoscopy and thyroid ultrasound source probes
+on:
+  push:
+    branches: ['bench/haiku-all-archive-20261119']
+    paths: ['.github/workflows/haiku-extra-licensed-visual-20261119.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  extra-public-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore first-run Haiku expense ledger and prior output
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p benchmark/internal-results/haiku-all-archive-20261119
+          gh api repos/${{ github.repository }}/actions/artifacts/14552874227/zip > /tmp/haiku-original.zip
+          unzip -oq /tmp/haiku-original.zip -d benchmark/internal-results/haiku-all-archive-20261119
+      - name: Restore extra six specialist answers and cumulative expense ledger
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p benchmark/internal-results/haiku-specialist-resumed-20261119
+          gh api repos/${{ github.repository }}/actions/artifacts/14555145839/zip > /tmp/haiku-specialists.zip
+          unzip -oq /tmp/haiku-specialists.zip -d benchmark/internal-results/haiku-specialist-resumed-20261119
+      - name: Haiku direct image readings for five original public dermoscopy and thyroid stills
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python benchmark/scripts/haiku-extra-licensed-visual-20261119.py
+      - name: Preserve outputs, immutable source image hashes, real costs and license credits
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: haiku-dermatology-thyroid-20261119
+          path: benchmark/internal-results/haiku-extra-public-visual-20261119/
+          retention-days: 21
+          if-no-files-found: warn
