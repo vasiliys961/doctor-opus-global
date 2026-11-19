@@ -35,3 +35,5 @@ jobs:
           path: benchmark/internal-results/haiku-all-archive-20261119/
           retention-days: 21
           if-no-files-found: warn
+
+# diagnostic retry: fast stop on HTTP 403, preserve sanitized provider reason
