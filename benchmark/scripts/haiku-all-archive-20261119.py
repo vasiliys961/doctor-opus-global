@@ -140,7 +140,16 @@ def infer(arm,cid,sys_prompt,question,max_tokens=3200,image=None,reference=None,
             rec["status"]="incomplete"
     except error.HTTPError as ex:
         rec["error"]="provider_http_"+str(ex.code)
-        # Do not retry charged or rate-limited calls; preserve complete per-case evidence.
+        try:
+            body=json.loads(ex.read(2048).decode("utf-8", errors="replace"))
+            detail=body.get("error") or {}
+            message=str(detail.get("message") or "")
+            message=re.sub(r"sk-or-[A-Za-z0-9_-]+","[REDACTED]",message)
+            rec["provider_error_detail"]=message[:250]
+        except Exception:
+            rec["provider_error_detail"]="not_parseable"
+        # Access/permission/provider restrictions: stop immediately, never retry.
+        if ex.code in (401,402,403,404):stop=True
     except Exception as ex:
         rec["error"]=type(ex).__name__ + ": " + str(ex)
         if "cost" in str(ex) or "substitution" in str(ex):stop=True
