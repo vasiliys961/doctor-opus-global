@@ -1,0 +1,18 @@
+name: Cancel duplicate Academy twelve-case run (archived twelve already complete)
+on:
+  push:
+    branches: ['bench/academy-12-paired-20261119']
+    paths: ['.github/workflows/academy-cancel-duplicate-20261119.yml']
+permissions:
+  contents: read
+  actions: write
+jobs:
+  stop-duplicate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Avoid second paid inference on 12 cases already complete in archived branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X POST repos/${{ github.repository }}/actions/runs/44589504672/cancel || true
