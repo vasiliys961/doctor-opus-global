@@ -1,0 +1,55 @@
+name: Academy Haiku 5 role REPORT ONLY from completed artifacts
+on:
+  push:
+    branches:
+      - bench/haiku-five-role-mast12-20261119
+    paths:
+      - .github/workflows/academy-haiku5-artifact-reconcile-20261119.yml
+permissions:
+  contents: write
+  actions: read
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Retrieve PREVIOUSLY FINISHED experiment, ZERO PAID MODEL CALLS
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for shard in 00 03 06 09; do
+            base="benchmark/internal-results/academy-12-haiku5-20261119/haiku5/shard-$shard"
+            mkdir -p "$base"
+            gh run download 44595020491 --repo "${{ github.repository }}" --name "haiku5-shard-$shard" --dir "$base"
+          done
+          mkdir -p benchmark/internal-results/haiku-archived-20261119
+          gh run download 44568505502 --repo "${{ github.repository }}" --name haiku-all-archive-20261119 --dir benchmark/internal-results/haiku-archived-20261119
+          echo '--- ARTIFACT FILE STRUCTURE ---'
+          find benchmark/internal-results/academy-12-haiku5-20261119 benchmark/internal-results/haiku-archived-20261119 -type f | head -70
+      - name: Generate validated twelve-case report without new inference
+        run: |
+          python benchmark/scripts/academy-haiku5-report-20261119.py
+          python - <<'PY'
+          import json
+          p="benchmark/results/2026-11-19-haiku5-five-role/summary.json"
+          s=json.load(open(p))
+          assert s["five_role_calls"]==60 and s["complete_five_role_cases"]==12 and s["solo_archived_cases"]==12,s
+          print("VERIFIED: 12 solo + 60 five-role answers, costs from paid original run")
+          PY
+      - name: Preserve report and original case-level evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: academy-haiku5-reconciled-full12
+          path: benchmark/results/2026-11-19-haiku5-five-role/
+          retention-days: 30
+      - name: Commit validated report only in research branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f benchmark/results/2026-11-19-haiku5-five-role/
+          git commit -m "results(academy): validate full Haiku five-role vs archived solo evidence"
+          git push origin HEAD:bench/haiku-five-role-mast12-20261119
