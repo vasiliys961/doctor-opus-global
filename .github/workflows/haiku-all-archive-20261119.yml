@@ -1,0 +1,37 @@
+name: Doctor Opus historical Haiku 5.5 versus all archived models
+on:
+  push:
+    branches: ['bench/haiku-all-archive-20261119']
+    paths: ['.github/workflows/haiku-all-archive-20261119.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  haiku-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Restore 20 exact existing public Nemotron ECG and X-ray image files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p benchmark/internal-results/nemotron-free-ecg-xray-20261119
+          gh run download 44405325428 --repo "${{ github.repository }}" --name nemotron-free-ecg-xray-selfreview-20261119 --dir benchmark/internal-results/nemotron-free-ecg-xray-20261119
+          test -s benchmark/internal-results/nemotron-free-ecg-xray-20261119/manifest.json
+      - name: Execute Haiku 5.5 matched 12 MAST and 20 image cases plus specialist probe; total cap USD 0.50
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python benchmark/scripts/haiku-all-archive-20261119.py
+      - name: Keep response-level cost, answers, predictions, prompt provenance for manual physician review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: haiku-all-archive-20261119
+          path: benchmark/internal-results/haiku-all-archive-20261119/
+          retention-days: 21
+          if-no-files-found: warn
