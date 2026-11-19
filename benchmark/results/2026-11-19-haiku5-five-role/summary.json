@@ -1,0 +1,12 @@
+{
+  "model": "anthropic/claude-haiku-5.5",
+  "cases": 12,
+  "five_role_calls": 0,
+  "complete_five_role_cases": 0,
+  "five_role_billed_usd": 0,
+  "solo_archived_cases": 0,
+  "solo_archived_usd": 0,
+  "clinical_accuracy": null,
+  "clinical_safety": null,
+  "shards": []
+}
