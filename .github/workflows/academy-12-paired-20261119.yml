@@ -1,0 +1,47 @@
+name: Academy matched 12 cases free vs mixed 5-role ensemble
+on:
+  push:
+    branches: ['bench/academy-12-paired-20261119']
+    paths: ['.github/workflows/academy-12-paired-20261119.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  paired:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [free, mixed]
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Syntax and test contract
+        run: |
+          python -m py_compile benchmark/scripts/academy-12-paired-20261119.py
+          python -m unittest discover -s benchmark/scripts -p 'test_academy_cheap_ensemble.py' -v
+      - name: Twelve original public cases, 4 independent roles and synthesis
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ACADEMY_MIXED_12_OWNER_REQUEST: AUTHORIZED
+          PROFILE: ${{ matrix.profile }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          if [ "$PROFILE" = free ]; then BUDGET=0; else BUDGET=0.05; fi
+          python benchmark/scripts/academy-12-paired-20261119.py --profile "$PROFILE" --shard "$SHARD" --budget "$BUDGET"
+      - name: Preserve evidence, role failures and actual billed costs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: academy12-${{ matrix.profile }}-shard-${{ matrix.shard }}
+          path: benchmark/internal-results/academy-12-paired-20261119/
+          retention-days: 21
+          if-no-files-found: warn
+
+# 4 independent mixed jobs x USD 0.05 maximum = USD 0.20 absolute new experiment cap.
+# OpenRouter must report true usage.cost; every model price verified before inference.
+# For free jobs, any nonzero current price fails closed before inference.
