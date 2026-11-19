@@ -36,9 +36,9 @@ ROLE_TASKS = {
 PROFILES = {
  "free": {
    "hypothesis": "nvidia/nemotron-3-ultra-550b-a55b:free",
-   "testChooser": "nvidia/nemotron-3.5-super-vl:free",
-   "challenger": "inclusionai/ling-3.2-flash:free",
-   "stewardship": "nvidia/nemotron-3.5-lightning:free",
+   "testChooser": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "challenger": "nvidia/nemotron-3.5-lightning:free",
+   "stewardship": "nvidia/nemotron-3-ultra-550b-a55b:free",
    "checklist": "nvidia/nemotron-3-ultra-550b-a55b:free",
  },
  "light": {
@@ -49,8 +49,8 @@ PROFILES = {
    "checklist": "anthropic/claude-haiku-5.5",
  },
 }
-TOKEN_CAPS={"hypothesis":1100,"testChooser":1000,"challenger":1300,
-            "stewardship":1150,"checklist":2000}
+TOKEN_CAPS={"hypothesis":1100,"testChooser":1800,"challenger":2000,
+            "stewardship":1800,"checklist":3500}
 # Conservative input-token reservation per call, not merely count chars / 4.
 RESERVED_INPUT_TOKENS=22000
 HEADERS={"User-Agent":"DoctorOpusAcademyResearch/1.0"}
