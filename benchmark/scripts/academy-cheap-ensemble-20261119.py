@@ -186,7 +186,7 @@ def main():
   if outputs and outputs[-1]["status"] in ("provider_blocked","hard_budget_stop","unexpected_paid_billing"):
    break
  summary={"profile":a.profile,"case_ids":list(CASE_IDS[:a.case_limit]),
-   "completed_studies":sum(any(r["case"]==cid and r["role"]=="checklist" and r["status"]=="ok" for r in outputs) for cid in CASE_IDS[:a.case_limit]),
+   "completed_studies":sum(all(any(r["case"]==cid and r["role"]==rid and r["status"]=="ok" for r in outputs) for rid in ROLE_ORDER) for cid in CASE_IDS[:a.case_limit]),
    "role_calls":len(outputs),"valid_role_responses":sum(x["status"]=="ok" for x in outputs),
    "spent_usd":round(spent,8),"hard_cap_usd":a.max_total_usd,
    "clinical_quality":"NOT SCORED; independent rubric-based physician review required",
