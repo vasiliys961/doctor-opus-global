@@ -37,7 +37,7 @@ class AcademyContract(unittest.TestCase):
         self.assertIsNone(mod.price_info({modname:{"architecture":{"input_modalities":["text"]},
           "pricing":{"prompt":"0.000002","completion":"0.000001"}}},modname,"light"))
     def test_no_patient_or_treatment_workflow(self):
-        self.assertTrue(all(("Do not" in x or "not" in x) for x in mod.ROLE_TASKS.values()))
+        self.assertTrue(all(("Do not" in x or "do not" in x or "unsigned" in x) for x in mod.ROLE_TASKS.values()))
         self.assertLessEqual(len(mod.CASE_IDS),3)
 
 if __name__=="__main__":unittest.main()
