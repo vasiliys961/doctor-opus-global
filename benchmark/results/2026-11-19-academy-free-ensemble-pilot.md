@@ -10,6 +10,7 @@
 | Profile | Academy Free: Nemotron 3 Ultra for hypothesis, investigations, stewardship and synthesis; Nemotron 3.5 Lightning for challenger |
 | Public cases | Card002, Derm001 (same unchanged original MAST source cases used earlier for Opus, Haiku and Nemotron) |
 | Model calls | 10/10 replies obtained; actual OpenRouter reported cost **USD 0.000000** |
+| Sum of sequential model response times | Card002 **93.8 s**; Derm001 **171.3 s**, excluding workflow/download overhead; free access was slow |
 | Complete role outputs | 9/10 with \`finish_reason=stop\` |
 | Truly complete FIVE-role cases | **1/2** (Card002) |
 | Partially complete case | Derm001 has 4/5 complete: challenger truncated. A final synthesis text exists but must not count as complete consilium. |
