@@ -1,0 +1,63 @@
+name: Research Neon VQA-RAD 20 pinned public images cap USD 0.50
+on:
+  push:
+    branches:
+      - bench/neon-vqa-rad-20-20261120
+    paths:
+      - .github/workflows/neon-vqa-rad-20-20261120.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  neon-public-vision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NEON_SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Require existing research key without printing
+        run: test -n "$OPENROUTER_API_KEY"
+      - name: Install small public data dependencies
+        run: pip install -q "pyarrow>=17,<26" "pillow>=10,<13"
+      - name: Pinned 5-case shard; actual usage cap USD 0.125
+        run: python benchmark/scripts/neon-vqa-rad-20-20261120.py
+      - name: Preserve all records, including incomplete/unknown billing
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-vqa-rad-shard-${{ matrix.shard }}
+          path: benchmark/internal-results/neon-vqa-rad-20261120/
+          if-no-files-found: warn
+          retention-days: 30
+  report:
+    needs: neon-public-vision
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: neon-vqa-rad-shard-*
+          path: shard-artifacts
+      - name: Offline data integrity, answer-match and provider usage summary
+        run: python benchmark/scripts/neon-vqa-rad-report-20261120.py
+      - name: Preserve full report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-vqa-rad-20-report
+          path: benchmark/internal-results/neon-vqa-rad-20261120-report/
+          if-no-files-found: warn
+          retention-days: 30
