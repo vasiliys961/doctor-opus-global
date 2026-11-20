@@ -1,0 +1,101 @@
+name: Research Neon VQA-RAD concise recovery cap additional USD 0.35
+on:
+  push:
+    branches:
+      - bench/neon-vqa-rad-20-20261120
+    paths:
+      - .github/workflows/neon-vqa-rad-short-20261120.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  direct-short-vqa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1]
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NEON_SHORT_SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify existing research secret without disclosure
+        run: test -n "$OPENROUTER_API_KEY"
+      - run: pip install -q "pyarrow>=17,<26" "pillow>=10,<13"
+      - name: Run 10 short-answer cases with USD 0.175 maximum
+        run: python benchmark/scripts/neon-vqa-rad-short-20261120.py
+      - name: Preserve case-level records on all outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-vqa-rad-short-shard-${{ matrix.shard }}
+          path: benchmark/internal-results/neon-vqa-rad-short-20261120/
+          if-no-files-found: warn
+          retention-days: 30
+  report-short:
+    needs: direct-short-vqa
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: neon-vqa-rad-short-shard-*
+          path: shard-artifacts
+      - name: Offline consolidated clinical-question comparison
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          out=pathlib.Path('benchmark/internal-results/neon-vqa-rad-short-20261120-report')
+          out.mkdir(parents=True,exist_ok=True)
+          rows=[];summaries=[]
+          for n in (0,1):
+              src=pathlib.Path('shard-artifacts/neon-vqa-rad-short-shard-%d'%n)
+              p=src/'summary.json'
+              if p.exists():summaries.append(json.loads(p.read_text()))
+              for j in range(n*10+1,n*10+11):
+                  f=src/('vqa-neon-%02d.json'%j)
+                  if f.exists():rows.append(json.loads(f.read_text()))
+          rows.sort(key=lambda r:r['id'])
+          ok=[r for r in rows if r.get('status')=='ok']
+          paid=sum(s.get('billedUsd',0) for s in summaries)
+          orig=0.138075
+          s=dict(completed=len(ok),planned=20,strictCorrect=sum(bool(r.get('strictMatch')) for r in ok),
+              shortAnswerBilledUsd=paid,earlierJsonExperimentBilledUsd=orig,
+              combinedConfirmedBilledUsd=round(orig+paid,8),
+              totalOwnerBudgetUsd=0.50,matchedToHistoricalArgon=False,
+              earlierArgon15of20NotSameCaseList=True,shards=summaries)
+          (out/'summary.json').write_text(json.dumps(s,ensure_ascii=False,indent=2)+'\n')
+          (out/'responses.jsonl').write_text(''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in rows))
+          lines=['# Neon short-answer VQA-RAD public pilot','',
+              '**NOT A PAIRWISE ARGON COMPARISON**: Historical original case list unavailable.',
+              'New 20 public images from the same pinned VQA-RAD test revision, but different selection.',
+              '',f'- Completed: {len(ok)}/20',f'- Exact short answers: {s["strictCorrect"]}/{len(ok)}',
+              f'- New short-answer provider spend: USD {paid:.6f}',
+              f'- Prior JSON experiment (stopped due to formatting): USD {orig:.6f}',
+              f'- Combined spend: USD {orig+paid:.6f} (owner cap USD 0.50).',
+              '- Historic Argon 15/20 was on UNKNOWN DIFFERENT cases: cannot claim superiority.',
+              '- No model outputs assessed by a radiologist. No production changes.',
+              '','| ID | Question | Reference | Neon | Strict | Cost USD |',
+              '|---|---|---|---|---:|---:|']
+          for r in rows:
+              esc=lambda x:str(x or '').replace('|','/').replace('\n',' ')
+              lines.append(f'| {r["id"]} | {esc(r.get("question"))} | {esc(r.get("reference"))} | {esc(r.get("answer"))} | {r.get("strictMatch","-")} | {r.get("costUsd",0):.6f} |')
+          (out/'report.md').write_text('\n'.join(lines)+'\n')
+          print('NEON_SHORT_FINAL',json.dumps(s),flush=True)
+          if len(ok)!=20:raise SystemExit('Partial results only, see report artifact')
+          PY
+      - name: Upload full report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: neon-vqa-rad-short-20-report
+          path: benchmark/internal-results/neon-vqa-rad-short-20261120-report/
+          if-no-files-found: warn
+          retention-days: 30
